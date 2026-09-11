@@ -23,7 +23,7 @@
         "Плагины и расширения",
         "Открытый исходный код"
     ],
-    "screenshots": [],
+    "screenshots": ["notepad_1.png","notepad_2.png"],
     "is_portable": false,
     "is_open_source": true,
     "tags": ["редактор", "текст", "код", "разработка"]
