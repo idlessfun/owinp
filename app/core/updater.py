@@ -12,6 +12,10 @@ from PySide6.QtCore import QThread, Signal
 
 from app import __version__
 
+from app.core.cache_manager import (
+    should_check_version_now,
+    set_last_version_check,
+)
 
 # Репозиторий на GitHub — сюда будем обращаться
 GITHUB_REPO = "idlessfun/owinp"
@@ -24,7 +28,7 @@ class UpdateChecker(QThread):
 
     Сигналы:
         update_available — (info_dict) есть новая версия
-        no_update       — обновлений нет (тихо, ничего не делаем)
+        no_update       — обновлений нет
         check_failed    — (error_text) не удалось проверить (нет интернета и т.п.)
     """
 
@@ -32,9 +36,24 @@ class UpdateChecker(QThread):
     no_update = Signal()
     check_failed = Signal(str)
 
+    def __init__(self, force: bool = False) -> None:
+        """
+        force=True  — игнорировать троттлинг, проверить прямо сейчас
+                      (для кнопки «Проверить обновления»).
+        force=False — проверять только если прошёл час (по умолчанию).
+        """
+        super().__init__()
+        self.force = force
+
     def run(self) -> None:
         """Основной метод потока. Запускается автоматически при .start()."""
         try:
+            # Троттлинг: если не force и недавно проверяли — пропускаем
+            if not self.force and not should_check_version_now():
+                print("[updater] Проверка обновлений пропущена (троттлинг)")
+                self.no_update.emit()
+                return
+
             print("[updater] Проверка обновлений...")
             print(f"[updater] Текущая версия: {__version__}")
 
@@ -57,6 +76,8 @@ class UpdateChecker(QThread):
             html_url = data.get("html_url", "")          # ссылка на страницу релиза
             published_at = data.get("published_at", "")  # дата публикации
 
+            # Записываем время успешной проверки
+            set_last_version_check()
             # Убираем префикс "v" из тега: "v0.2.0" → "0.2.0"
             latest_version = tag_name.lstrip("v").strip()
 

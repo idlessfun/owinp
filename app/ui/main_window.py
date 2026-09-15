@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QStackedWidget,
     QFrame,
     QPushButton,
+    QMessageBox,
 )
 
 from app import __version__
@@ -33,6 +34,7 @@ class MainWindow(QMainWindow):
         self._update_info: dict | None = None
         self._checker: UpdateChecker | None = None
         self._catalog_loader: CatalogLoader | None = None
+        self._manual_check = False   # True — проверка была запущена кнопкой
 
         self.setWindowTitle(f"OWINP — Open Windows Programs v{__version__}")
         self.resize(1100, 700)
@@ -156,6 +158,7 @@ class MainWindow(QMainWindow):
         stack = QStackedWidget()
 
         # Страница «Главная»
+        # Страница «Главная»
         home = QWidget()
         home_layout = QVBoxLayout(home)
         home_layout.setContentsMargins(40, 40, 40, 40)
@@ -165,14 +168,24 @@ class MainWindow(QMainWindow):
         title.setObjectName("PageTitle")
 
         subtitle = QLabel(
-            "Здесь будет каталог open-source программ для Windows.\n"
-            "Скоро добавим карточки приложений и кнопку «Скачать»."
+            "Каталог open-source программ для Windows.\n"
+            "Версия: v" + __version__
         )
         subtitle.setObjectName("PageSubtitle")
         subtitle.setWordWrap(True)
 
         home_layout.addWidget(title)
         home_layout.addWidget(subtitle)
+        home_layout.addSpacing(20)
+
+        # Кнопка «Проверить обновления»
+        check_btn = QPushButton("🔄 Проверить обновления")
+        check_btn.setObjectName("PrimaryButton")
+        check_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        check_btn.setFixedWidth(240)
+        check_btn.clicked.connect(self._manual_check_for_updates)
+        home_layout.addWidget(check_btn)
+
         home_layout.addStretch(1)
 
         stack.addWidget(home)
@@ -192,8 +205,19 @@ class MainWindow(QMainWindow):
             self.content_area.setCurrentIndex(index)
 
     def _check_for_updates(self) -> None:
-        """Запускает фоновую проверку обновлений."""
-        self._checker = UpdateChecker()
+        """Автоматическая проверка обновлений (при старте)."""
+        self._manual_check = False
+        self._checker = UpdateChecker(force=False)
+        self._checker.update_available.connect(self._on_update_available)
+        self._checker.no_update.connect(self._on_no_update)
+        self._checker.check_failed.connect(self._on_check_failed)
+        self._checker.start()
+
+    def _manual_check_for_updates(self) -> None:
+        """Принудительная проверка обновлений (по кнопке)."""
+        print("[main] Ручная проверка обновлений")
+        self._manual_check = True
+        self._checker = UpdateChecker(force=True)
         self._checker.update_available.connect(self._on_update_available)
         self._checker.no_update.connect(self._on_no_update)
         self._checker.check_failed.connect(self._on_check_failed)
@@ -227,14 +251,36 @@ class MainWindow(QMainWindow):
         self._update_info = info
         self.update_banner.setVisible(True)
         print(f"[main] Показан баннер обновления: v{info.get('version')}")
+        # Если ручная проверка — сразу открываем диалог
+        if self._manual_check:
+            self._manual_check = False
+            self._show_update_dialog()
 
     def _on_no_update(self) -> None:
-        """Обновлений нет — тихо ничего не делаем."""
-        pass
+        """Обновлений нет."""
+        print("[main] Обновлений нет")
+        # Если это была ручная проверка — показываем сообщение
+        if self._manual_check:
+            self._manual_check = False
+            QMessageBox.information(
+                self,
+                "Обновления",
+                f"У вас последняя версия OWINP ({__version__}).",
+            )
 
     def _on_check_failed(self, error: str) -> None:
-        """Ошибка проверки — тихо логируем, пользователю не показываем."""
+        """Ошибка проверки."""
         print(f"[main] Не удалось проверить обновления: {error}")
+        # Если это была ручная проверка — показываем сообщение
+        if self._manual_check:
+            self._manual_check = False
+            QMessageBox.warning(
+                self,
+                "Ошибка проверки",
+                f"Не удалось проверить обновления.\n\n"
+                f"Проверьте подключение к интернету.\n\n"
+                f"Ошибка: {error}",
+            )
 
     def _show_update_dialog(self) -> None:
         """Открывает диалог с описанием обновления."""

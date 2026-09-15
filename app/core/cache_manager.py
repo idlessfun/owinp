@@ -217,3 +217,46 @@ def clear_assets_cache() -> bool:
                 print(f"[cache] Не удалось очистить {folder}: {e}")
                 success = False
     return success
+
+# --- Работа со временем проверки версии ---
+
+LAST_VERSION_CHECK_FILE = APPDATA / "OWINP" / "cache" / "last_version_check.txt"
+VERSION_CHECK_INTERVAL = 3600  # 1 час
+
+
+def get_last_version_check() -> float:
+    """
+    Возвращает Unix-время последней проверки версии.
+    Если файла нет или он битый — возвращает 0 (давно).
+    """
+    if not LAST_VERSION_CHECK_FILE.exists():
+        return 0.0
+    try:
+        with open(LAST_VERSION_CHECK_FILE, "r", encoding="utf-8") as f:
+            return float(f.read().strip())
+    except Exception:
+        return 0.0
+
+
+def set_last_version_check() -> None:
+    """Записывает текущее время как момент последней проверки версии."""
+    try:
+        LAST_VERSION_CHECK_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(LAST_VERSION_CHECK_FILE, "w", encoding="utf-8") as f:
+            f.write(str(time.time()))
+    except Exception as e:
+        print(f"[cache] Не удалось сохранить время проверки версии: {e}")
+
+
+def should_check_version_now() -> bool:
+    """
+    Проверяет, надо ли проверять версию сейчас.
+
+    Возвращает True если:
+    - никогда не проверяли, или
+    - прошло больше VERSION_CHECK_INTERVAL с последней проверки
+    """
+    last = get_last_version_check()
+    if last == 0:
+        return True
+    return (time.time() - last) > VERSION_CHECK_INTERVAL
