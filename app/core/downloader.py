@@ -19,22 +19,32 @@ class Downloader(QThread):
     Сигналы:
         progress_changed — (скачано_байт, всего_байт, скорость_байт/с)
         finished_ok      — (путь_к_файлу)
+        cancelled        — отмена пользователем (без ошибки)
         failed           — (текст_ошибки)
     """
 
-    progress_changed = Signal(int, int, float)  # скачано, всего, скорость
-    finished_ok = Signal(str)  # путь к файлу
-    failed = Signal(str)  # текст ошибки
+    progress_changed = Signal(int, int, float)   # скачано, всего, скорость
+    finished_ok = Signal(str)                    # путь к файлу
+    cancelled = Signal()                         # отмена без ошибки
+    failed = Signal(str)                         # текст ошибки
 
     def __init__(self, url: str, save_path: Path) -> None:
         super().__init__()
         self.url = url
         self.save_path = save_path
         self._cancelled = False
+        self._closing = False   # True, если диалог закрывается
 
     def cancel(self) -> None:
         """Запросить отмену. Поток прервётся при следующей итерации."""
         self._cancelled = True
+
+    def mark_closing(self) -> None:
+        """
+        Пометить поток как «диалог закрывается».
+        После этого сигналы НЕ будут эмититься (объект-приёмник может быть уже удалён).
+        """
+        self._closing = True
 
     def run(self) -> None:
         """
@@ -68,7 +78,9 @@ class Downloader(QThread):
                         if self._cancelled:
                             f.close()
                             self.save_path.unlink(missing_ok=True)
-                            self.failed.emit("Скачивание отменено пользователем")
+                            # Если диалог уже закрывается — не эмитим
+                            if not self._closing:
+                                self.cancelled.emit()
                             return
 
                         chunk = response.read(chunk_size)
@@ -84,19 +96,24 @@ class Downloader(QThread):
 
                         # Испускаем сигнал прогресса не чаще 10 раз в секунду
                         now = time.time()
-                        if now - last_emit >= 0.1:
+                        if now - last_emit >= 0.1 and not self._closing:
                             self.progress_changed.emit(downloaded, total, speed)
                             last_emit = now
 
-                # Финальный сигнал прогресса — 100%
-                self.progress_changed.emit(downloaded, total, 0)
+                    # Финальный сигнал прогресса — 100%
+                    if not self._closing:
+                        self.progress_changed.emit(downloaded, total, 0)
 
-            # Успех
-            self.finished_ok.emit(str(self.save_path))
+                # Успех
+                if not self._closing:
+                    self.finished_ok.emit(str(self.save_path))
 
         except urllib.error.HTTPError as e:
-            self.failed.emit(f"Ошибка HTTP {e.code}: {e.reason}")
+            if not self._closing:
+                self.failed.emit(f"Ошибка HTTP {e.code}: {e.reason}")
         except urllib.error.URLError as e:
-            self.failed.emit(f"Нет соединения: {e.reason}")
+            if not self._closing:
+                self.failed.emit(f"Нет соединения: {e.reason}")
         except Exception as e:
-            self.failed.emit(f"Неизвестная ошибка: {e}")
+            if not self._closing:
+                self.failed.emit(f"Неизвестная ошибка: {e}")

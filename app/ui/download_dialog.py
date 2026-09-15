@@ -211,6 +211,7 @@ class DownloadDialog(QDialog):
         self.downloader = Downloader(url, self.save_path)
         self.downloader.progress_changed.connect(self._on_progress)
         self.downloader.finished_ok.connect(self._on_finished)
+        self.downloader.cancelled.connect(self._on_cancelled)
         self.downloader.failed.connect(self._on_failed)
         self.downloader.start()
 
@@ -221,6 +222,10 @@ class DownloadDialog(QDialog):
 
     def _on_progress(self, downloaded: int, total: int, speed: float) -> None:
         """Обновляет прогресс-бар и тексты."""
+        # Защита: если диалог уже закрывается — игнорируем
+        if self.downloader and self.downloader._closing:
+            return
+
         if total > 0:
             percent = int(downloaded * 100 / total)
             self.progress_bar.setValue(percent)
@@ -242,6 +247,9 @@ class DownloadDialog(QDialog):
 
     def _on_finished(self, path: str) -> None:
         """Успех. Меняем интерфейс на «готово»."""
+        if self.downloader and self.downloader._closing:
+            return
+        ...
         print(f"[download] Завершено: {path}")
 
         self.progress_bar.setRange(0, 100)
@@ -255,6 +263,9 @@ class DownloadDialog(QDialog):
         self._swap_buttons_to_done(Path(path))
 
     def _on_failed(self, error: str) -> None:
+        if self.downloader and self.downloader._closing:
+            return
+        ...
         print(f"[download] Ошибка: {error}")
         QMessageBox.critical(
             self,
@@ -264,9 +275,16 @@ class DownloadDialog(QDialog):
         self.reject()
 
     def _on_cancel(self) -> None:
+        """Кнопка «Отмена»."""
         if self.downloader and self.downloader.isRunning():
+            self.downloader.mark_closing()
             self.downloader.cancel()
-            self.downloader.wait(2000)
+            self.downloader.wait(3000)
+        self.reject()
+
+    def _on_cancelled(self) -> None:
+        """Поток сообщил, что отмена выполнена."""
+        print("[download] Отменено пользователем")
         self.reject()
 
     # ------------------------------------------------------------------
@@ -330,3 +348,19 @@ class DownloadDialog(QDialog):
                 return f"{size:.1f} {unit}"
             size /= 1024
         return f"{size:.1f} ТБ"
+    # ------------------------------------------------------------------
+    # Закрытие окна (крестик)
+    # ------------------------------------------------------------------
+    def closeEvent(self, event) -> None:
+        """
+        Вызывается при закрытии окна (крестик, Alt+F4).
+        Корректно останавливает поток скачивания.
+        """
+        if self.downloader and self.downloader.isRunning():
+            print("[download] Диалог закрывается — отмена скачивания")
+            self.downloader.mark_closing()
+            self.downloader.cancel()
+            # Ждём завершения потока (до 3 секунд)
+            if not self.downloader.wait(3000):
+                print("[download] Поток не завершился за 3 сек — принудительно")
+        event.accept()
