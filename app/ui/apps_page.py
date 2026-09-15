@@ -26,7 +26,6 @@ from PySide6.QtWidgets import (
 from app.core.app_loader import load_all_apps
 from app.core.cache_manager import find_icon
 from app.ui.app_details_page import AppDetailsPage
-from PySide6.QtCore import Qt, Signal, QTimer
 from app.core.catalog_loader import CatalogLoader
 
 

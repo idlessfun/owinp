@@ -224,13 +224,20 @@ class CatalogLoader(QThread):
         icon_url = data.get("icon_url")
         icon_name = data.get("icon")
 
+        # Безопасность: отклоняем небезопасные URL
+        if icon_url and not icon_url.lower().startswith("https://"):
+            print(f"[catalog] Небезопасный icon_url (не HTTPS): {icon_url}")
+            icon_url = None
+
         if icon_url:
             ext = self._extract_extension(icon_url)
             local_name = f"{app_id}{ext}"
             self._download_image(icon_url, CACHE_ICONS / local_name)
         elif icon_name:
-            url = RAW_ICONS_BASE + icon_name
-            self._download_image(url, CACHE_ICONS / icon_name)
+            # Безопасность: берём только имя файла (без путей)
+            safe_name = Path(icon_name).name
+            url = RAW_ICONS_BASE + safe_name
+            self._download_image(url, CACHE_ICONS / safe_name)
 
         # --- Скриншоты ---
         screenshot_urls = data.get("screenshots_urls", [])
@@ -238,14 +245,20 @@ class CatalogLoader(QThread):
 
         # Внешние URL
         for i, url in enumerate(screenshot_urls):
+            # Безопасность: только HTTPS
+            if not url.lower().startswith("https://"):
+                print(f"[catalog] Небезопасный screenshots_urls (не HTTPS): {url}")
+                continue
             ext = self._extract_extension(url)
             local_name = f"{app_id}_{i}{ext}"
             self._download_image(url, CACHE_SCREENSHOTS / local_name)
 
         # Имена файлов из своего репо
         for name in screenshot_names:
-            url = RAW_SCREENSHOTS_BASE + name
-            self._download_image(url, CACHE_SCREENSHOTS / name)
+            # Безопасность: берём только имя файла
+            safe_name = Path(name).name
+            url = RAW_SCREENSHOTS_BASE + safe_name
+            self._download_image(url, CACHE_SCREENSHOTS / safe_name)
 
     def _download_image(self, url: str, target: Path) -> bool:
         """

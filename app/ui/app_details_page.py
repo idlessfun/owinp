@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QFrame,
     QScrollArea,
-    QSizePolicy,
 )
 
 ICONS_DIR = Path(__file__).parent.parent / "resources" / "icons"

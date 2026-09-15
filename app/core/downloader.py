@@ -52,10 +52,17 @@ class Downloader(QThread):
         Здесь и происходит скачивание.
         """
         try:
+            # Проверка безопасности: только HTTPS
+            if not self.url.lower().startswith("https://"):
+                self.failed.emit(
+                    f"Небезопасный URL (требуется HTTPS): {self.url}"
+                )
+                return
+
             # Открываем соединение
             req = urllib.request.Request(
                 self.url,
-                headers={"User-Agent": "OWINP/0.1 (+https://github.com/)"},
+                headers={"User-Agent": "OWINP/0.1 (+https://github.com/idlessfun/owinp)"},
             )
 
             with urllib.request.urlopen(req, timeout=30) as response:
