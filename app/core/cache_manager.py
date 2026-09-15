@@ -85,3 +85,47 @@ def clear_cache() -> bool:
 def get_cache_dir() -> Path:
     """Возвращает путь к папке кэша (для отладки или показа пользователю)."""
     return CACHE_DIR
+# --- Работа со временем последнего обновления ---
+
+import time
+
+LAST_UPDATE_FILE = APPDATA / "OWINP" / "cache" / "last_update.txt"
+THROTTLE_SECONDS = 3600  # 1 час
+
+
+def get_last_update_time() -> float:
+    """
+    Возвращает Unix-время последнего успешного обновления каталога.
+    Если файла нет или он битый — возвращает 0 (давно).
+    """
+    if not LAST_UPDATE_FILE.exists():
+        return 0.0
+    try:
+        with open(LAST_UPDATE_FILE, "r", encoding="utf-8") as f:
+            return float(f.read().strip())
+    except Exception:
+        return 0.0
+
+
+def set_last_update_time() -> None:
+    """Записывает текущее время как момент последнего обновления."""
+    try:
+        LAST_UPDATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(LAST_UPDATE_FILE, "w", encoding="utf-8") as f:
+            f.write(str(time.time()))
+    except Exception as e:
+        print(f"[cache] Не удалось сохранить время обновления: {e}")
+
+
+def should_update_now() -> bool:
+    """
+    Проверяет, надо ли обновлять каталог сейчас.
+
+    Возвращает True если:
+    - никогда не обновлялись, или
+    - прошло больше THROTTLE_SECONDS с последнего обновления
+    """
+    last = get_last_update_time()
+    if last == 0:
+        return True
+    return (time.time() - last) > THROTTLE_SECONDS

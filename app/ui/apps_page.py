@@ -25,6 +25,8 @@ from PySide6.QtWidgets import (
 
 from app.core.app_loader import load_all_apps
 from app.ui.app_details_page import AppDetailsPage
+from PySide6.QtCore import Qt, Signal, QTimer
+from app.core.catalog_loader import CatalogLoader
 
 
 ICONS_DIR = Path(__file__).parent.parent / "resources" / "icons"
@@ -42,6 +44,8 @@ class AppsPage(QWidget):
         # Загружаем все программы один раз при старте
         self.all_apps: list[dict] = load_all_apps()
         self.filtered_apps: list[dict] = list(self.all_apps)
+        # Для кнопки «Обновить»
+        self._reload_loader: CatalogLoader | None = None
 
         # Внешний layout
         outer = QVBoxLayout(self)
@@ -87,6 +91,13 @@ class AppsPage(QWidget):
         # ---- Панель инструментов: поиск + категория + счётчик ----
         toolbar = QHBoxLayout()
         toolbar.setSpacing(12)
+        # Кнопка «Обновить каталог»
+        self.refresh_btn = QPushButton("🔄 Обновить")
+        self.refresh_btn.setObjectName("RefreshButton")
+        self.refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.refresh_btn.setFixedWidth(140)
+        self.refresh_btn.clicked.connect(self._force_refresh)
+        toolbar.addWidget(self.refresh_btn)
 
         # Строка поиска
         self.search_input = QLineEdit()
@@ -205,6 +216,69 @@ class AppsPage(QWidget):
         # Обновляем счётчик
         self.counter_label.setText(f"Найдено: {len(self.filtered_apps)}")
 
+    def _force_refresh(self) -> None:
+        """
+        Принудительно обновляет каталог с GitHub и перестраивает список.
+        Игнорирует троттлинг.
+        """
+        print("[AppsPage] Принудительное обновление каталога...")
+        self.refresh_btn.setEnabled(False)
+        self.refresh_btn.setText("⏳ Обновление...")
+
+        self._reload_loader = CatalogLoader(force=True)
+        self._reload_loader.finished_ok.connect(self._on_reload_finished)
+        self._reload_loader.failed.connect(self._on_reload_failed)
+        self._reload_loader.start()
+
+    def _on_reload_finished(self, count: int) -> None:
+        """Каталог обновлён — перечитываем кэш и перестраиваем список."""
+        print(f"[AppsPage] Обновлено файлов: {count}. Перестройка списка...")
+
+        # Перечитываем данные из кэша
+        self.all_apps = load_all_apps()
+        self.filtered_apps = list(self.all_apps)
+
+        # Обновляем список категорий (могли появиться новые)
+        self._rebuild_categories()
+
+        # Перестраиваем карточки (с учётом текущего поиска/фильтра)
+        self._apply_filters()
+
+        # Возвращаем кнопку в исходное состояние
+        self.refresh_btn.setEnabled(True)
+        self.refresh_btn.setText("🔄 Обновить")
+
+    def _rebuild_categories(self) -> None:
+        """Перезаполняет выпадающий список категорий."""
+        # Запоминаем текущий выбор
+        current = self.category_combo.currentText()
+
+        # Блокируем сигналы, чтобы не триггерить фильтрацию во время перезаполнения
+        self.category_combo.blockSignals(True)
+        self.category_combo.clear()
+        self.category_combo.addItem("Все категории")
+
+        categories = sorted({
+            app.get("category", "").strip()
+            for app in self.all_apps
+            if app.get("category")
+        })
+        self.category_combo.addItems(categories)
+
+        # Восстанавливаем выбор (если категория ещё существует)
+        idx = self.category_combo.findText(current)
+        if idx >= 0:
+            self.category_combo.setCurrentIndex(idx)
+        else:
+            self.category_combo.setCurrentIndex(0)  # сбрасываем на «Все категории»
+
+        self.category_combo.blockSignals(False)
+
+    def _on_reload_failed(self, error: str) -> None:
+        """Ошибка обновления — сообщаем в консоль."""
+        print(f"[AppsPage] Ошибка обновления: {error}")
+        self.refresh_btn.setEnabled(True)
+        self.refresh_btn.setText("🔄 Обновить")
     # ------------------------------------------------------------------
     # Переключение страниц
     # ------------------------------------------------------------------

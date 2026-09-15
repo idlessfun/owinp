@@ -19,6 +19,7 @@ import os
 import urllib.error
 import urllib.request
 from pathlib import Path
+from app.core.cache_manager import set_last_update_time
 
 from PySide6.QtCore import QThread, Signal
 
@@ -56,9 +57,25 @@ class CatalogLoader(QThread):
     finished_ok = Signal(int)
     failed = Signal(str)
 
+    def __init__(self, force: bool = False) -> None:
+        """
+        force=True — игнорировать троттлинг, обновить прямо сейчас.
+        force=False — обновлять только если прошёл час (по умолчанию).
+        """
+        super().__init__()
+        self.force = force
+
     def run(self) -> None:
         """Основной метод потока."""
         try:
+            # Троттлинг: если не force и недавно обновлялись — пропускаем
+            if not self.force:
+                from app.core.cache_manager import should_update_now
+                if not should_update_now():
+                    print("[catalog] Обновление каталога пропущено (троттлинг)")
+                    self.finished_ok.emit(0)
+                    return
+
             print("[catalog] Проверка обновлений каталога...")
 
             # 1. Создаём папку кэша (если её нет)
@@ -81,6 +98,7 @@ class CatalogLoader(QThread):
                     downloaded += 1
 
             print(f"[catalog] Обновлено файлов: {downloaded}")
+            set_last_update_time()   # записываем время
             self.finished_ok.emit(downloaded)
 
         except urllib.error.HTTPError as e:

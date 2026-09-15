@@ -199,9 +199,14 @@ class MainWindow(QMainWindow):
         self._checker.check_failed.connect(self._on_check_failed)
         self._checker.start()
 
-    def _refresh_catalog(self) -> None:
-        """Запускает фоновое обновление каталога с GitHub."""
-        self._catalog_loader = CatalogLoader()
+    def _refresh_catalog(self, force: bool = False) -> None:
+        """
+        Запускает фоновое обновление каталога с GitHub.
+
+        force=True — игнорировать троттлинг (для кнопки «Обновить»).
+        force=False — обновлять только если прошёл час (по умолчанию).
+        """
+        self._catalog_loader = CatalogLoader(force=force)
         self._catalog_loader.finished_ok.connect(self._on_catalog_updated)
         self._catalog_loader.failed.connect(self._on_catalog_failed)
         self._catalog_loader.start()
@@ -585,5 +590,30 @@ class MainWindow(QMainWindow):
                 color: #ffffff;
                 background-color: rgba(255, 255, 255, 20);
                 border-radius: 6px;
+            }
+                        /* ---------- Кнопка «Обновить каталог» ---------- */
+            #RefreshButton {
+                background-color: #24262b;
+                color: #7c9cff;
+                border: 1px solid #3a4a7a;
+                border-radius: 8px;
+                padding: 10px 14px;
+                font-weight: 600;
+                font-size: 13px;
+            }
+
+            #RefreshButton:hover {
+                background-color: #2b3557;
+                color: #a0b4ff;
+            }
+
+            #RefreshButton:pressed {
+                background-color: #222a4a;
+            }
+
+            #RefreshButton:disabled {
+                color: #666;
+                border: 1px solid #2a2b30;
+                background-color: #1e1f22;
             }
         """)
