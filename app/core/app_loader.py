@@ -1,27 +1,46 @@
 """
 Загрузчик JSON-карточек программ.
 
-Читает все .json-файлы из папки app/apps/ и возвращает
-список словарей с информацией о программах.
+Сначала пытается прочитать кэшированные JSON
+из кэша (скачанные с GitHub).
+Если кэша нет — читает встроенные JSON из app/apps/.
 """
 
 import json
 from pathlib import Path
 
-# Определяем путь к папке с карточками относительно этого файла.
-# __file__ — путь к этому файлу (app_loader.py)
-# .parent — папка core/
-# .parent.parent — папка app/
-# / "apps" — добавляем apps/
+from app.core.cache_manager import cache_exists, load_cached_apps
+
+
+# Путь к встроенным JSON (поставляются с приложением)
 APPS_DIR = Path(__file__).parent.parent / "apps"
 
 
 def load_all_apps() -> list[dict]:
     """
-    Читает все .json-файлы из папки app/apps/.
+    Возвращает список всех программ.
 
-    Возвращает список словарей. Если файл битый — пропускает его
-    и печатает предупреждение в консоль.
+    Приоритет:
+    1. Кэш (из %APPDATA%) — если есть
+    2. Встроенные (app/apps/) — как запасной вариант
+    """
+    # Сначала пробуем кэш
+    if cache_exists():
+        cached = load_cached_apps()
+        if cached:
+            print(f"[app_loader] Загружено из кэша: {len(cached)} шт.")
+            return cached
+
+    # Если кэша нет или он пуст — используем встроенные
+    print("[app_loader] Кэш пуст — используем встроенный каталог")
+    return load_builtin_apps()
+
+
+def load_builtin_apps() -> list[dict]:
+    """
+    Читает JSON-файлы из встроенной папки app/apps/.
+
+    Возвращает список словарей. Битые файлы пропускает.
     """
     apps: list[dict] = []
 
@@ -29,13 +48,12 @@ def load_all_apps() -> list[dict]:
         print(f"[app_loader] Папка не найдена: {APPS_DIR}")
         return apps
 
-    # sorted() — чтобы порядок карточек был стабильным (по имени файла)
     for json_file in sorted(APPS_DIR.glob("*.json")):
         try:
             with open(json_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
             apps.append(data)
-            print(f"[app_loader] Загружено: {json_file.name}")
+            print(f"[app_loader] Загружено (встроенное): {json_file.name}")
         except json.JSONDecodeError as e:
             print(f"[app_loader] Ошибка в файле {json_file.name}: {e}")
         except Exception as e:
