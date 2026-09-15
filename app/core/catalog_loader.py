@@ -19,30 +19,46 @@ import os
 import urllib.error
 import urllib.request
 from pathlib import Path
-from app.core.cache_manager import set_last_update_time
 
 from PySide6.QtCore import QThread, Signal
+
+from app.core.cache_manager import set_last_update_time
 
 
 # --- Константы ---
 GITHUB_USER = "idlessfun"
 GITHUB_REPO = "owinp"
 GITHUB_BRANCH = "master"
-APPS_PATH_IN_REPO = "app/apps"   # где в репозитории лежат JSON-карточки
+APPS_PATH_IN_REPO = "app/apps"              # где в репозитории лежат JSON-карточки
+ICONS_PATH_IN_REPO = "app/resources/icons"  # где иконки
+SCREENSHOTS_PATH_IN_REPO = "app/resources/screenshots"  # где скриншоты
 
-# Разрешённые домены (whitelist — код не сможет обратиться никуда, кроме них)
+# URL для GitHub API — получить список файлов
 API_URL = (
     f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}"
     f"/contents/{APPS_PATH_IN_REPO}?ref={GITHUB_BRANCH}"
 )
-RAW_BASE = (
+
+# Базовые URL для raw-скачивания (для JSON и картинок с GitHub)
+RAW_APPS_BASE = (
     f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}"
     f"/{GITHUB_BRANCH}/{APPS_PATH_IN_REPO}/"
 )
+RAW_ICONS_BASE = (
+    f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}"
+    f"/{GITHUB_BRANCH}/{ICONS_PATH_IN_REPO}/"
+)
+RAW_SCREENSHOTS_BASE = (
+    f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}"
+    f"/{GITHUB_BRANCH}/{SCREENSHOTS_PATH_IN_REPO}/"
+)
 
-# Куда сохранять кэш — %APPDATA%\OWINP\cache\apps\
+# Куда сохранять кэш — %APPDATA%\OWINP\cache\
 APPDATA = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
-CACHE_DIR = APPDATA / "OWINP" / "cache" / "apps"
+CACHE_ROOT = APPDATA / "OWINP" / "cache"
+CACHE_DIR = CACHE_ROOT / "apps"                 # JSON-файлы
+CACHE_ICONS = CACHE_ROOT / "icons"              # иконки
+CACHE_SCREENSHOTS = CACHE_ROOT / "screenshots"  # скриншоты
 
 
 class CatalogLoader(QThread):
@@ -78,8 +94,10 @@ class CatalogLoader(QThread):
 
             print("[catalog] Проверка обновлений каталога...")
 
-            # 1. Создаём папку кэша (если её нет)
+            # 1. Создаём папки кэша (если их нет)
             CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            CACHE_ICONS.mkdir(parents=True, exist_ok=True)
+            CACHE_SCREENSHOTS.mkdir(parents=True, exist_ok=True)
 
             # 2. Получаем список файлов в app/apps/ через GitHub API
             files = self._fetch_file_list()
@@ -88,17 +106,23 @@ class CatalogLoader(QThread):
                 self.finished_ok.emit(0)
                 return
 
-            # 3. Скачиваем каждый .json файл
+            # 3. Скачиваем каждый .json файл + картинки к нему
             downloaded = 0
             for filename in files:
                 if not filename.endswith(".json"):
                     continue
 
-                if self._download_json(filename):
-                    downloaded += 1
+                data = self._download_json(filename)
+                if data is None:
+                    continue
+
+                downloaded += 1
+
+                # Скачиваем иконку и скриншоты этой программы
+                self._download_assets(data)
 
             print(f"[catalog] Обновлено файлов: {downloaded}")
-            set_last_update_time()   # записываем время
+            set_last_update_time()
             self.finished_ok.emit(downloaded)
 
         except urllib.error.HTTPError as e:
@@ -135,7 +159,6 @@ class CatalogLoader(QThread):
         with urllib.request.urlopen(req, timeout=10) as response:
             data = json.loads(response.read().decode("utf-8"))
 
-        # GitHub возвращает список объектов с полем "name"
         if not isinstance(data, list):
             return []
 
@@ -145,12 +168,12 @@ class CatalogLoader(QThread):
             if isinstance(item, dict) and item.get("type") == "file"
         ]
 
-    def _download_json(self, filename: str) -> bool:
+    def _download_json(self, filename: str) -> dict | None:
         """
         Скачивает один JSON-файл через raw.githubusercontent.com
-        и сохраняет в кэш. Возвращает True при успехе.
+        и сохраняет в кэш. Возвращает dict с данными при успехе, иначе None.
         """
-        url = RAW_BASE + filename
+        url = RAW_APPS_BASE + filename
 
         try:
             req = urllib.request.Request(
@@ -164,12 +187,12 @@ class CatalogLoader(QThread):
             data = json.loads(raw)
             if not isinstance(data, dict):
                 print(f"[catalog] {filename} — не объект JSON, пропуск")
-                return False
+                return None
 
             # Проверка обязательных полей
             if "name" not in data or "id" not in data:
                 print(f"[catalog] {filename} — нет полей id/name, пропуск")
-                return False
+                return None
 
             # Сохраняем в кэш
             target = CACHE_DIR / filename
@@ -177,11 +200,91 @@ class CatalogLoader(QThread):
                 json.dump(data, f, ensure_ascii=False, indent=2)
 
             print(f"[catalog] Скачано: {filename}")
-            return True
+            return data
 
         except json.JSONDecodeError:
             print(f"[catalog] {filename} — битый JSON, пропуск")
-            return False
+            return None
         except Exception as e:
             print(f"[catalog] {filename} — ошибка: {e}")
+            return None
+
+    def _download_assets(self, data: dict) -> None:
+        """
+        Скачивает иконку и скриншоты программы в кэш.
+
+        Логика:
+        - Если в JSON есть icon_url — используем его
+        - Если только icon (имя файла) — строим URL из своего GitHub
+        - Аналогично для screenshots/screenshots_urls
+        """
+        app_id = data.get("id", "unknown")
+
+        # --- Иконка ---
+        icon_url = data.get("icon_url")
+        icon_name = data.get("icon")
+
+        if icon_url:
+            ext = self._extract_extension(icon_url)
+            local_name = f"{app_id}{ext}"
+            self._download_image(icon_url, CACHE_ICONS / local_name)
+        elif icon_name:
+            url = RAW_ICONS_BASE + icon_name
+            self._download_image(url, CACHE_ICONS / icon_name)
+
+        # --- Скриншоты ---
+        screenshot_urls = data.get("screenshots_urls", [])
+        screenshot_names = data.get("screenshots", [])
+
+        # Внешние URL
+        for i, url in enumerate(screenshot_urls):
+            ext = self._extract_extension(url)
+            local_name = f"{app_id}_{i}{ext}"
+            self._download_image(url, CACHE_SCREENSHOTS / local_name)
+
+        # Имена файлов из своего репо
+        for name in screenshot_names:
+            url = RAW_SCREENSHOTS_BASE + name
+            self._download_image(url, CACHE_SCREENSHOTS / name)
+
+    def _download_image(self, url: str, target: Path) -> bool:
+        """
+        Скачивает одну картинку и сохраняет в target.
+        Возвращает True при успехе.
+        """
+        try:
+            req = urllib.request.Request(
+                url,
+                headers={"User-Agent": "OWINP/0.1"},
+            )
+            with urllib.request.urlopen(req, timeout=10) as response:
+                content = response.read()
+
+            if not content or len(content) < 20:
+                print(f"[catalog] Картинка пуста: {url}")
+                return False
+
+            with open(target, "wb") as f:
+                f.write(content)
+
+            print(f"[catalog] Скачана картинка: {target.name}")
+            return True
+
+        except Exception as e:
+            print(f"[catalog] Картинка не скачана ({url}): {e}")
             return False
+
+    @staticmethod
+    def _extract_extension(url: str) -> str:
+        """
+        Извлекает расширение файла из URL.
+        Например: ".../vlc.png" -> ".png"
+                  ".../file.jpg?x=1" -> ".jpg"
+        Возвращает ".png" по умолчанию.
+        """
+        clean = url.split("?")[0]
+        if "." in clean.rsplit("/", 1)[-1]:
+            ext = "." + clean.rsplit(".", 1)[-1].lower()
+            if ext in (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".ico"):
+                return ext
+        return ".png"

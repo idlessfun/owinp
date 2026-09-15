@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.app_loader import load_all_apps
+from app.core.cache_manager import find_icon
 from app.ui.app_details_page import AppDetailsPage
 from PySide6.QtCore import Qt, Signal, QTimer
 from app.core.catalog_loader import CatalogLoader
@@ -335,15 +336,25 @@ class AppCard(QFrame):
         layout.setSpacing(16)
 
         # --- Иконка ---
+        # --- Иконка (сначала кэш, потом встроенная) ---
         icon_label = QLabel()
         icon_label.setFixedSize(64, 64)
         icon_label.setObjectName("AppIcon")
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        icon_name = data.get("icon", "")
-        icon_path = ICONS_DIR / icon_name if icon_name else None
+        # Ищем иконку в кэше
+        cached_icon = find_icon(data)
+        icon_path = cached_icon
 
-        if icon_path and icon_path.exists():
+        # Если в кэше нет — пробуем встроенную
+        if icon_path is None:
+            icon_name = data.get("icon", "")
+            if icon_name:
+                candidate = ICONS_DIR / icon_name
+                if candidate.exists():
+                    icon_path = candidate
+
+        if icon_path is not None:
             pixmap = QPixmap(str(icon_path)).scaled(
                 64, 64,
                 Qt.AspectRatioMode.KeepAspectRatio,

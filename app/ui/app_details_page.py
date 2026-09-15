@@ -7,7 +7,7 @@
 """
 
 from pathlib import Path
-
+from app.core.cache_manager import find_icon, find_screenshot
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
@@ -153,15 +153,24 @@ class AppDetailsPage(QWidget):
         layout.setSpacing(20)
 
         # --- Иконка 96x96 ---
+        # --- Иконка 96x96 (сначала кэш, потом встроенная) ---
         icon_label = QLabel()
         icon_label.setFixedSize(96, 96)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon_label.setObjectName("DetailsIcon")
 
-        icon_name = data.get("icon", "")
-        icon_path = ICONS_DIR / icon_name if icon_name else None
+        # Ищем иконку в кэше
+        icon_path = find_icon(data)
 
-        if icon_path and icon_path.exists():
+        # Если в кэше нет — пробуем встроенную
+        if icon_path is None:
+            icon_name = data.get("icon", "")
+            if icon_name:
+                candidate = ICONS_DIR / icon_name
+                if candidate.exists():
+                    icon_path = candidate
+
+        if icon_path is not None:
             pixmap = QPixmap(str(icon_path)).scaled(
                 96, 96,
                 Qt.AspectRatioMode.KeepAspectRatio,
@@ -317,28 +326,56 @@ class AppDetailsPage(QWidget):
         header.setObjectName("SectionTitle")
         layout.addWidget(header)
 
-        for shot_name in screenshots:
-            shot_path = SCREENSHOTS_DIR / shot_name
-            if not shot_path.exists():
+        # Пробуем два источника: "screenshots" (имена) и "screenshots_urls" (URL)
+        names = self._current_data.get("screenshots", [])
+        urls = self._current_data.get("screenshots_urls", [])
+
+        # Сначала — по именам (наши скриншоты)
+        for name in names:
+            shot_path = find_screenshot(self._current_data, name)
+            if shot_path is None:
+                # Fallback: встроенный скриншот
+                builtin = SCREENSHOTS_DIR / name
+                if builtin.exists():
+                    shot_path = builtin
+
+            if shot_path is None:
                 continue
 
-            pixmap = QPixmap(str(shot_path))
-            if pixmap.isNull():
+            self._add_screenshot_to_layout(shot_path, layout)
+
+        # Потом — по внешним URL (индексы)
+        for idx in range(len(urls)):
+            shot_path = find_screenshot(self._current_data, idx)
+            if shot_path is None:
                 continue
 
-            # Масштабируем до ширины 600, сохраняя пропорции
-            scaled = pixmap.scaledToWidth(
-                600,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-
-            img_label = QLabel()
-            img_label.setPixmap(scaled)
-            img_label.setObjectName("Screenshot")
-            layout.addWidget(img_label)
+            self._add_screenshot_to_layout(shot_path, layout)
 
         return section
 
+    def _add_screenshot_to_layout(self, shot_path: Path, layout) -> None:
+        """
+        Загружает картинку, масштабирует до ширины 600 и добавляет в layout.
+        Пропускает битые/несуществующие файлы.
+        """
+        if not shot_path.exists():
+            return
+
+        pixmap = QPixmap(str(shot_path))
+        if pixmap.isNull():
+            print(f"[details] Битый скриншот: {shot_path.name}")
+            return
+
+        scaled = pixmap.scaledToWidth(
+            600,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+
+        img_label = QLabel()
+        img_label.setPixmap(scaled)
+        img_label.setObjectName("Screenshot")
+        layout.addWidget(img_label)
     # ------------------------------------------------------------------
     # Обработчики
     # ------------------------------------------------------------------
