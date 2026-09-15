@@ -1,0 +1,29 @@
+{
+    "id": "firefox",
+    "name": "Mozilla Firefox",
+    "developer": "Mozilla Foundation",
+    "description": "Свободный веб-браузер с открытым исходным кодом.",
+    "long_description": "Firefox — быстрый, приватный и свободный веб-браузер. Разрабатывается некоммерческой организацией Mozilla, не собирает данные пользователей без согласия и поддерживает открытые стандарты.",
+    "version": "131.0.2",
+    "release_date": "2024-10-09",
+    "category": "Браузеры",
+    "size_mb": 60.0,
+    "license": "MPL 2.0",
+    "website": "https://www.mozilla.org/firefox/",
+    "download_url": "https://download.mozilla.org/?product=firefox-latest&os=win64&lang=ru",
+    "icon": "firefox.png",
+    "requirements": [
+        "Windows 10 и выше",
+        "64-битная система"
+    ],
+    "features": [
+        "Быстрый и приватный",
+        "Блокировка трекеров",
+        "Открытый исходный код",
+        "Синхронизация между устройствами"
+    ],
+    "screenshots": [],
+    "is_portable": false,
+    "is_open_source": true,
+    "tags": ["браузер", "интернет", "firefox", "mozilla"]
+}
