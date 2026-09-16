@@ -10,7 +10,18 @@
     "size_mb": 60.0,
     "license": "MPL 2.0",
     "website": "https://www.firefox.com/",
-    "download_url": "https://download.mozilla.org/?product=firefox-stub&os=win&lang=ru",
+    "downloads": [
+        {
+            "label": "Скачать",
+            "url": "https://download.mozilla.org/?product=firefox-latest&os=win64&lang=ru",
+            "primary": true
+        },
+        {
+            "label": "Скачать (EN)",
+            "url": "https://download.mozilla.org/?product=firefox-latest&os=win64&lang=en-US",
+            "primary": false
+        }
+    ],
     "icon": "firefox.png",
     "requirements": [
         "Windows 10 и выше",

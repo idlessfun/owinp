@@ -121,6 +121,7 @@ class CatalogLoader(QThread):
                 # Скачиваем иконку и скриншоты этой программы
                 self._download_assets(data)
 
+            # Всё скачано — сообщаем один раз
             print(f"[catalog] Обновлено файлов: {downloaded}")
             set_last_update_time()
             self.finished_ok.emit(downloaded)
