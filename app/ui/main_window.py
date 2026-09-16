@@ -186,6 +186,16 @@ class MainWindow(QMainWindow):
         check_btn.clicked.connect(self._manual_check_for_updates)
         home_layout.addWidget(check_btn)
 
+        # Кнопка «Очистить кэш»
+        clear_cache_btn = QPushButton("🧹 Очистить кэш")
+        clear_cache_btn.setObjectName("SecondaryButton")
+        clear_cache_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        clear_cache_btn.setFixedWidth(240)
+        clear_cache_btn.clicked.connect(self._clear_cache_clicked)
+        home_layout.addWidget(clear_cache_btn)
+
+        home_layout.addStretch(1)
+
         home_layout.addStretch(1)
 
         stack.addWidget(home)
@@ -222,6 +232,41 @@ class MainWindow(QMainWindow):
         self._checker.no_update.connect(self._on_no_update)
         self._checker.check_failed.connect(self._on_check_failed)
         self._checker.start()
+
+    def _clear_cache_clicked(self) -> None:
+            """Очищает кэш каталога и картинок."""
+            from app.core.cache_manager import clear_cache, clear_assets_cache
+
+            answer = QMessageBox.question(
+                self,
+                "Очистить кэш?",
+                "Будут удалены:\n"
+                "• скачанные JSON-карточки программ\n"
+                "• иконки и скриншоты\n\n"
+                "При следующем запуске каталог скачается заново.\n\n"
+                "Продолжить?",
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return
+
+            ok_json = clear_cache()
+            ok_assets = clear_assets_cache()
+
+            if ok_json and ok_assets:
+                QMessageBox.information(
+                    self,
+                    "Кэш очищен ✅",
+                    "Кэш успешно очищен.\n\n"
+                    "При следующем запуске OWINP загрузит свежий каталог.",
+                )
+                print("[main] Кэш очищен пользователем")
+            else:
+                QMessageBox.warning(
+                    self,
+                    "Ошибка",
+                    "Не удалось полностью очистить кэш.\n"
+                    "Проверь консоль на ошибки.",
+                )
 
     def _refresh_catalog(self, force: bool = False) -> None:
         """

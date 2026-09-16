@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.downloader import Downloader
+from app.core.cache_manager import find_icon
 
 
 ICONS_DIR = Path(__file__).parent.parent / "resources" / "icons"
@@ -62,9 +63,18 @@ class DownloadDialog(QDialog):
         icon_label.setFixedSize(56, 56)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        icon_name = self.app_data.get("icon", "")
-        icon_path = ICONS_DIR / icon_name if icon_name else None
-        if icon_path and icon_path.exists():
+        # Ищем иконку в кэше (как в AppCard)
+        icon_path = find_icon(self.app_data)
+
+        # Если в кэше нет — пробуем встроенную
+        if icon_path is None:
+            icon_name = self.app_data.get("icon", "")
+            if icon_name:
+                candidate = ICONS_DIR / icon_name
+                if candidate.exists():
+                    icon_path = candidate
+
+        if icon_path is not None:
             pixmap = QPixmap(str(icon_path)).scaled(
                 56, 56,
                 Qt.AspectRatioMode.KeepAspectRatio,

@@ -121,6 +121,9 @@ class CatalogLoader(QThread):
                 # Скачиваем иконку и скриншоты этой программы
                 self._download_assets(data)
 
+            # Удаляем устаревшие файлы из кэша
+            self._cleanup_stale_files(files)
+
             # Всё скачано — сообщаем один раз
             print(f"[catalog] Обновлено файлов: {downloaded}")
             set_last_update_time()
@@ -291,6 +294,75 @@ class CatalogLoader(QThread):
         except Exception as e:
             print(f"[catalog] Картинка не скачана ({url}): {e}")
             return False
+
+    def _cleanup_stale_files(self, actual_files: list[str]) -> None:
+        """
+        Удаляет из кэша файлы, которых больше нет на GitHub.
+
+        actual_files — список имён файлов, которые сейчас есть на GitHub.
+        """
+        # 1. Собираем множество актуальных имён
+        actual_names = set()
+        for name in actual_files:
+            if name.endswith(".json"):
+                actual_names.add(name)
+
+        # 2. Удаляем устаревшие JSON из кэша
+        removed_json = 0
+        if CACHE_DIR.exists():
+            for cache_file in CACHE_DIR.glob("*.json"):
+                if cache_file.name not in actual_names:
+                    print(f"[catalog] Удаляем устаревшее: {cache_file.name}")
+                    try:
+                        cache_file.unlink()
+                        removed_json += 1
+                    except Exception as e:
+                        print(f"[catalog] Не удалось удалить {cache_file.name}: {e}")
+
+        # 3. Собираем актуальные id (из оставшихся JSON в кэше)
+        actual_ids = set()
+        if CACHE_DIR.exists():
+            for cache_file in CACHE_DIR.glob("*.json"):
+                try:
+                    with open(cache_file, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    if "id" in data:
+                        actual_ids.add(data["id"])
+                except Exception:
+                    pass
+
+        # 4. Удаляем иконки, которых нет в актуальных id
+        removed_icons = 0
+        if CACHE_ICONS.exists():
+            for icon_file in CACHE_ICONS.glob("*"):
+                if icon_file.stem not in actual_ids:
+                    print(f"[catalog] Удаляем устаревшую иконку: {icon_file.name}")
+                    try:
+                        icon_file.unlink()
+                        removed_icons += 1
+                    except Exception:
+                        pass
+
+        # 5. Удаляем скриншоты, которых нет в актуальных id
+        removed_shots = 0
+        if CACHE_SCREENSHOTS.exists():
+            for shot_file in CACHE_SCREENSHOTS.glob("*"):
+                stem = shot_file.stem
+                if "_" in stem:
+                    shot_id = stem.rsplit("_", 1)[0]
+                    if shot_id not in actual_ids:
+                        print(f"[catalog] Удаляем устаревший скриншот: {shot_file.name}")
+                        try:
+                            shot_file.unlink()
+                            removed_shots += 1
+                        except Exception:
+                            pass
+
+        if removed_json or removed_icons or removed_shots:
+            print(
+                f"[catalog] Очистка кэша: "
+                f"JSON={removed_json}, иконок={removed_icons}, скриншотов={removed_shots}"
+            )
 
     @staticmethod
     def _extract_extension(url: str) -> str:
