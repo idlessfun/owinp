@@ -10,7 +10,18 @@
     "size_mb": 4.8,
     "license": "GPL",
     "website": "https://notepad-plus-plus.org/",
-    "download_url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.Installer.x64.exe",
+    "downloads": [
+        {
+            "label": "Скачать",
+            "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.Installer.x64.exe",
+            "primary": true
+        },
+        {
+            "label": "Скачать (EN)",
+            "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.Installer.x64.exe",
+            "primary": false
+        }
+    ],
     "icon": "notepadpp.png",
     "requirements": [
         "Windows 7 и выше",

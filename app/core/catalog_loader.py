@@ -199,6 +199,8 @@ class CatalogLoader(QThread):
             target = CACHE_DIR / filename
             with open(target, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
+                f.flush()
+                os.fsync(f.fileno())   # гарантируем запись на диск
 
             print(f"[catalog] Скачано: {filename}")
             return data
@@ -280,6 +282,8 @@ class CatalogLoader(QThread):
 
             with open(target, "wb") as f:
                 f.write(content)
+                f.flush()
+                os.fsync(f.fileno())
 
             print(f"[catalog] Скачана картинка: {target.name}")
             return True
