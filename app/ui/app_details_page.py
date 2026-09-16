@@ -211,21 +211,34 @@ class AppDetailsPage(QWidget):
         actions = QVBoxLayout()
         actions.setSpacing(8)
 
-        download_btn = QPushButton("Скачать")
-        download_btn.setObjectName("PrimaryButton")
-        download_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        download_btn.setFixedWidth(160)
-        download_btn.clicked.connect(
-            lambda: self.download_requested.emit(self._current_data)
-        )
-        actions.addWidget(download_btn)
+        # Получаем список кнопок скачивания
+        download_buttons = self._get_download_buttons(data)
 
+        for btn_info in download_buttons:
+            label = btn_info.get("label", "Скачать")
+            url = btn_info.get("url", "")
+            is_primary = btn_info.get("primary", False)
+
+            if not url:
+                continue
+
+            btn = QPushButton(label)
+            btn.setObjectName("PrimaryButton" if is_primary else "SecondaryButton")
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setFixedWidth(180)
+            # Передаём в сигнал и данные, и конкретный URL
+            btn.clicked.connect(
+                lambda _, u=url, d=data: self._on_download_clicked(u, d)
+            )
+            actions.addWidget(btn)
+
+        # Кнопка «Открыть сайт» — отдельно
         website = data.get("website", "")
         if website:
             site_btn = QPushButton("Открыть сайт")
             site_btn.setObjectName("SecondaryButton")
             site_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            site_btn.setFixedWidth(160)
+            site_btn.setFixedWidth(180)
             site_btn.clicked.connect(lambda: self._open_website(website))
             actions.addWidget(site_btn)
 
@@ -375,6 +388,53 @@ class AppDetailsPage(QWidget):
         img_label.setPixmap(scaled)
         img_label.setObjectName("Screenshot")
         layout.addWidget(img_label)
+
+    def _get_download_buttons(self, data: dict) -> list[dict]:
+        """
+        Возвращает список кнопок скачивания.
+
+        Поддерживает два формата:
+        1. Новый: поле "downloads" — список словарей с label/url/primary
+        2. Старый: поле "download_url" — превращается в одну кнопку
+
+        Возвращает список словарей:
+        [{"label": str, "url": str, "primary": bool}, ...]
+        """
+        # Приоритет — новому формату
+        downloads = data.get("downloads", [])
+        if isinstance(downloads, list) and downloads:
+            result = []
+            for item in downloads:
+                if not isinstance(item, dict):
+                    continue
+                result.append({
+                    "label": item.get("label", "Скачать"),
+                    "url": item.get("url", ""),
+                    "primary": bool(item.get("primary", False)),
+                })
+            if result:
+                return result
+
+        # Fallback — старый формат
+        old_url = data.get("download_url", "")
+        if old_url:
+            return [{
+                "label": "Скачать",
+                "url": old_url,
+                "primary": True,
+            }]
+
+        return []
+
+    def _on_download_clicked(self, url: str, data: dict) -> None:
+        """
+        Нажатие на одну из кнопок скачивания.
+        Передаёт наружу данные программы + конкретный URL.
+        """
+        payload = dict(data)
+        payload["_clicked_url"] = url
+        self.download_requested.emit(payload)
+
     # ------------------------------------------------------------------
     # Обработчики
     # ------------------------------------------------------------------

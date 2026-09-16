@@ -201,9 +201,13 @@ class DownloadDialog(QDialog):
     # Логика скачивания
     # ------------------------------------------------------------------
     def _start_download(self) -> None:
-        url = self.app_data.get("download_url", "")
+        # URL может прийти из кнопки (_clicked_url) или из старого поля
+        url = self.app_data.get("_clicked_url") or self.app_data.get("download_url", "")
         if not url:
-            QMessageBox.warning(self, "Ошибка", "В JSON не указан download_url")
+            QMessageBox.warning(
+                self, "Ошибка",
+                "У программы не указана ссылка на скачивание."
+            )
             self.reject()
             return
 

@@ -295,7 +295,15 @@ class AppsPage(QWidget):
         from PySide6.QtWidgets import QFileDialog
         from app.ui.download_dialog import DownloadDialog
 
-        url = data.get("download_url", "")
+        # URL может прийти:
+        # - из кнопки (data["_clicked_url"])
+        # - из старого поля download_url
+        url = data.get("_clicked_url") or data.get("download_url", "")
+
+        if not url:
+            print("[AppsPage] У программы нет ссылки на скачивание")
+            return
+
         default_name = url.split("/")[-1] if url else "download.exe"
 
         save_path_str, _ = QFileDialog.getSaveFileName(

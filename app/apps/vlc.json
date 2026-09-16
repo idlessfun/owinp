@@ -10,7 +10,18 @@
     "size_mb": 40.0,
     "license": "GPL",
     "website": "https://www.videolan.org/vlc/",
-    "download_url": "https://get.videolan.org/vlc/3.0.21/win64/vlc-3.0.21-win64.exe",
+    "downloads": [
+    {
+        "label": "Скачать",
+        "url": "https://get.videolan.org/vlc/3.0.21/win64/vlc-3.0.21-win64.exe",
+        "primary": true
+    },
+    {
+        "label": "Зеркало (Яндекс)",
+        "url": "https://mirror.yandex.ru/mirrors/videolan/vlc/3.0.21/win64/vlc-3.0.21-win64.exe",
+        "primary": false
+    }
+],
     "icon": "vlc.png",
     "requirements": [
         "Windows 7 и выше",
