@@ -11,6 +11,16 @@
       "label": "Скачать для Windows",
       "url": "https://github.com/obsproject/obs-studio/releases/download/32.1.2/OBS-Studio-32.1.2-Windows-x64-Installer.exe",
       "primary": true
+    },
+    {
+      "label": "Анализ VirusTotal",
+      "url": "https://www.virustotal.com/gui/file/94d180c1fc481ccc307b95513f795d088d63ac4f61ad3253c2ac0d94d0844110",
+      "primary": false
+    },
+    {
+      "label": "Steam Страница",
+      "url": "https://store.steampowered.com/app/1905180/OBS_Studio/",
+      "primary": false
     }
   ],
   "is_open_source": true,
@@ -39,8 +49,5 @@
     "запись",
     "видео",
     "трансляция"
-  ],
-  "screenshots": [
-    "obs-studio_1.png"
   ]
 }
