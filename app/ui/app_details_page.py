@@ -218,6 +218,7 @@ class AppDetailsPage(QWidget):
             label = btn_info.get("label", "Скачать")
             url = btn_info.get("url", "")
             is_primary = btn_info.get("primary", False)
+            btn_type = btn_info.get("type", "download")   # ← новое поле
 
             if not url:
                 continue
@@ -226,9 +227,9 @@ class AppDetailsPage(QWidget):
             btn.setObjectName("PrimaryButton" if is_primary else "SecondaryButton")
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.setFixedWidth(180)
-            # Передаём в сигнал и данные, и конкретный URL
+            # Передаём в сигнал данные, URL и тип кнопки
             btn.clicked.connect(
-                lambda _, u=url, d=data: self._on_download_clicked(u, d)
+                lambda _, u=url, d=data, t=btn_type: self._on_download_clicked(u, d, t)
             )
             actions.addWidget(btn)
 
@@ -411,6 +412,7 @@ class AppDetailsPage(QWidget):
                     "label": item.get("label", "Скачать"),
                     "url": item.get("url", ""),
                     "primary": bool(item.get("primary", False)),
+                    "type": item.get("type", "download"),   # ← новое поле
                 })
             if result:
                 return result
@@ -426,13 +428,22 @@ class AppDetailsPage(QWidget):
 
         return []
 
-    def _on_download_clicked(self, url: str, data: dict) -> None:
+    def _on_download_clicked(self, url: str, data: dict, btn_type: str = "download") -> None:
         """
-        Нажатие на одну из кнопок скачивания.
-        Передаёт наружу данные программы + конкретный URL.
+        Нажатие на одну из кнопок.
+
+        btn_type = "download" — скачивать файл (сигнал наружу)
+        btn_type = "link"     — открыть ссылку в браузере
         """
-        payload = dict(data)
-        payload["_clicked_url"] = url
+        if btn_type == "link":
+            # Открываем ссылку в браузере
+            print(f"[details] Открываем ссылку: {url}")
+            self._open_website(url)
+            return
+
+        # По умолчанию — скачивание
+        payload = dict(data)         # копия
+        payload["_clicked_url"] = url  # добавляем URL, который нажали
         self.download_requested.emit(payload)
 
     # ------------------------------------------------------------------
