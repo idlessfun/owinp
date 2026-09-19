@@ -11,6 +11,23 @@
       "label": "Скачать",
       "url": "https://www.7-zip.org/a/7z2409-x64.exe",
       "primary": true
+    },
+    {
+      "label": "Открытый исходный код",
+      "url": "https://sourceforge.net/projects/sevenzip/",
+      "primary": false,
+      "type": "link"
+    },
+    {
+      "label": "Википедия",
+      "url": "https://ru.wikipedia.org/wiki/7-Zip",
+      "primary": false,
+      "type": "link"
+    },
+    {
+      "label": "Зеркало",
+      "url": "https://github.com/ip7z/7zip/releases/download/26.03/7z2603-x64.exe",
+      "primary": true
     }
   ],
   "is_open_source": true,
