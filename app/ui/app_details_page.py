@@ -119,8 +119,15 @@ class AppDetailsPage(QWidget):
             )
 
         # ---- Скриншоты ----
+        try:
+            from app.core.user_settings import load_user_settings
+            settings = load_user_settings()
+            show_screenshots = settings.get("show_screenshots", True)
+        except Exception:
+            show_screenshots = True
+
         screenshots = data.get("screenshots", [])
-        if screenshots:
+        if screenshots and show_screenshots:
             self.content_layout.addWidget(
                 self._build_screenshots(screenshots)
             )

@@ -260,9 +260,6 @@ class DownloadDialog(QDialog):
 
     def _on_finished(self, path: str) -> None:
         """Успех. Меняем интерфейс на «готово»."""
-        if self.downloader and self.downloader._closing:
-            return
-        ...
         print(f"[download] Завершено: {path}")
 
         self.progress_bar.setRange(0, 100)
@@ -274,6 +271,16 @@ class DownloadDialog(QDialog):
 
         # Меняем кнопки
         self._swap_buttons_to_done(Path(path))
+
+        # Автозапуск, если включено в настройках
+        try:
+            from app.core.user_settings import load_user_settings
+            settings = load_user_settings()
+            if settings.get("auto_run_after_download", False):
+                print("[download] Автозапуск включён — запускаем файл")
+                self._run_file(Path(path))
+        except Exception as e:
+            print(f"[download] Ошибка автозапуска: {e}")
 
     def _on_failed(self, error: str) -> None:
         if self.downloader and self.downloader._closing:

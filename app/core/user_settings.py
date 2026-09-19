@@ -1,7 +1,7 @@
 r"""
 Пользовательские настройки клиента OWINP.
 
-Хранит выбранную тему интерфейса.
+Хранит выбранную тему и настройки интерфейса.
 Сохраняет в %APPDATA%\OWINP\settings.json
 
 Безопасность:
@@ -21,17 +21,14 @@ SETTINGS_FILE = SETTINGS_DIR / "settings.json"
 
 
 # ---------- Готовые темы ----------
-# Каждая тема — набор согласованных цветов.
-# Ключ: ID темы (сохраняется в JSON)
-# Значение: словарь с человекочитаемым названием и цветами
 THEMES = {
     "dark-blue": {
         "name": "🌙  Тёмно-синяя",
-        "background": "#1e1f22",     # основной фон
-        "sidebar":    "#17181b",     # фон sidebar
-        "card":       "#24262b",     # фон карточек
-        "border":     "#2f3138",     # границы
-        "accent":     "#7c9cff",     # акцент
+        "background": "#1e1f22",
+        "sidebar":    "#17181b",
+        "card":       "#24262b",
+        "border":     "#2f3138",
+        "accent":     "#7c9cff",
     },
     "dark-red": {
         "name": "🔴  Тёмно-красная",
@@ -69,15 +66,25 @@ THEMES = {
 
 
 DEFAULT_THEME = "dark-blue"
+FONT_SIZES = [12, 14, 16, 18]
 
 
+# Все настройки клиента с дефолтными значениями
 DEFAULTS = {
-    "theme": DEFAULT_THEME,
+    "theme": DEFAULT_THEME,              # выбранная тема
+    "font_size": 14,                     # размер шрифта
+    "check_updates_on_start": True,      # проверять обновления при запуске
+    "refresh_catalog_on_start": True,    # обновлять каталог при запуске
+    "auto_run_after_download": False,    # запускать файл после скачивания
+    "show_update_banner": True,          # показывать баннер «Доступно обновление»
+    "compact_mode": False,               # компактный режим (карточки меньше)
+    "animations_enabled": True,          # анимации (заглушка — в будущем)
+    "show_screenshots": True,            # показывать скриншоты на странице программы
 }
 
 
 def load_user_settings() -> dict:
-    """Загружает настройки пользователя. Если файла нет — дефолты."""
+    """Загружает настройки. Если файла нет — дефолты."""
     if not SETTINGS_FILE.exists():
         return dict(DEFAULTS)
 
@@ -93,7 +100,7 @@ def load_user_settings() -> dict:
 
 
 def save_user_settings(settings: dict) -> bool:
-    """Сохраняет настройки пользователя."""
+    """Сохраняет настройки."""
     try:
         SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
         with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
@@ -111,5 +118,5 @@ def get_user_settings_path() -> Path:
 
 
 def get_theme(theme_id: str) -> dict:
-    """Возвращает словарь с цветами темы. Если тема неизвестна — дефолт."""
+    """Возвращает словарь с цветами темы."""
     return THEMES.get(theme_id, THEMES[DEFAULT_THEME])

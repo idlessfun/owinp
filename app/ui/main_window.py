@@ -20,6 +20,8 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QFormLayout,
     QComboBox,
+    QCheckBox,
+    QScrollArea,
 )
 
 from app import __version__
@@ -32,6 +34,8 @@ from app.core.user_settings import (
     get_theme,
     THEMES,
     DEFAULT_THEME,
+    FONT_SIZES,
+    DEFAULTS,
 )
 from app.ui.apps_page import AppsPage
 from app.ui.update_dialog import UpdateDialog
@@ -59,8 +63,16 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._apply_styles()
 
-        QTimer.singleShot(2000, self._check_for_updates)
-        QTimer.singleShot(3000, self._refresh_catalog)
+        # Запускаем проверки только если включены в настройках
+        if self.user_settings.get("check_updates_on_start", True):
+            QTimer.singleShot(2000, self._check_for_updates)
+        else:
+            print("[main] Проверка обновлений отключена в настройках")
+
+        if self.user_settings.get("refresh_catalog_on_start", True):
+            QTimer.singleShot(3000, self._refresh_catalog)
+        else:
+            print("[main] Обновление каталога отключено в настройках")
 
     # ------------------------------------------------------------------
     # Построение интерфейса
@@ -202,76 +214,291 @@ class MainWindow(QMainWindow):
         return stack
 
     def _build_settings_page(self) -> QWidget:
+        """Страница «Настройки» — тема, шрифт, поведение."""
         page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(40, 30, 40, 30)
-        layout.setSpacing(16)
+        outer = QVBoxLayout(page)
+        outer.setContentsMargins(40, 30, 40, 30)
+        outer.setSpacing(16)
 
         title = QLabel("Настройки")
         title.setObjectName("PageTitle")
-        layout.addWidget(title)
+        outer.addWidget(title)
 
         subtitle = QLabel(
-            "Настрой внешний вид приложения. Изменения применяются сразу "
-            "и сохраняются между запусками."
+            "Настрой внешний вид и поведение приложения. Изменения "
+            "применяются сразу и сохраняются между запусками."
         )
         subtitle.setObjectName("PageSubtitle")
         subtitle.setWordWrap(True)
-        layout.addWidget(subtitle)
+        outer.addWidget(subtitle)
 
-        # --- Группа «Тема оформления» ---
-        theme_group = QGroupBox("Тема оформления")
-        theme_group.setObjectName("SettingsGroup")
-        theme_form = QFormLayout(theme_group)
-        theme_form.setContentsMargins(16, 20, 16, 16)
-        theme_form.setSpacing(12)
+        # Прокручиваемая область
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setObjectName("FormScroll")
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
 
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 12, 0)
+        layout.setSpacing(16)
+
+        # --- Секция «Интерфейс» ---
+        layout.addWidget(self._build_settings_interface())
+
+        # --- Секция «Сеть и обновления» ---
+        layout.addWidget(self._build_settings_network())
+
+        # --- Секция «Скачивание» ---
+        layout.addWidget(self._build_settings_download())
+
+        # --- Секция «Страница программы» ---
+        layout.addWidget(self._build_settings_app_page())
+
+        layout.addStretch(1)
+        scroll.setWidget(container)
+        outer.addWidget(scroll, stretch=1)
+
+        # --- Кнопка сброса ---
+        buttons = QHBoxLayout()
+        reset_btn = QPushButton("🔄  Сбросить все настройки")
+        reset_btn.setObjectName("SecondaryButton")
+        reset_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        reset_btn.setFixedWidth(280)
+        reset_btn.clicked.connect(self._reset_all_settings)
+        buttons.addWidget(reset_btn)
+        buttons.addStretch(1)
+        outer.addLayout(buttons)
+
+        # --- Путь к файлу ---
+        path_label = QLabel(f"Файл настроек: {get_user_settings_path()}")
+        path_label.setObjectName("SettingsPath")
+        path_label.setWordWrap(True)
+        outer.addWidget(path_label)
+
+        return page
+
+    def _build_settings_interface(self) -> QGroupBox:
+        """Секция «Интерфейс»."""
+        group = QGroupBox("Интерфейс")
+        group.setObjectName("SettingsGroup")
+        form = QFormLayout(group)
+        form.setContentsMargins(16, 20, 16, 16)
+        form.setSpacing(12)
+
+        # Тема
         self.theme_combo = QComboBox()
         self.theme_combo.setObjectName("SettingsInput")
         self.theme_combo.setFixedWidth(320)
-
-        # Заполняем список темами
         for theme_id, theme_data in THEMES.items():
             self.theme_combo.addItem(theme_data["name"], theme_id)
-
-        # Устанавливаем текущую тему
         current_theme = self.user_settings.get("theme", DEFAULT_THEME)
         idx = self.theme_combo.findData(current_theme)
         if idx >= 0:
             self.theme_combo.setCurrentIndex(idx)
-
         self.theme_combo.currentIndexChanged.connect(self._on_theme_changed)
-        theme_form.addRow("Тема:", self.theme_combo)
+        form.addRow("Тема:", self.theme_combo)
 
-        layout.addWidget(theme_group)
+        # Размер шрифта
+        self.font_size_combo = QComboBox()
+        self.font_size_combo.setObjectName("SettingsInput")
+        self.font_size_combo.setFixedWidth(320)
+        for size in FONT_SIZES:
+            self.font_size_combo.addItem(f"{size} px", size)
+        current_size = self.user_settings.get("font_size", 14)
+        idx = self.font_size_combo.findData(current_size)
+        if idx >= 0:
+            self.font_size_combo.setCurrentIndex(idx)
+        self.font_size_combo.currentIndexChanged.connect(self._on_font_size_changed)
+        form.addRow("Размер шрифта:", self.font_size_combo)
 
-        # --- Кнопки ---
-        buttons = QHBoxLayout()
-        buttons.setSpacing(10)
+        # Компактный режим
+        self.compact_check = QCheckBox("Компактный режим (карточки меньше)")
+        self.compact_check.setChecked(self.user_settings.get("compact_mode", False))
+        self.compact_check.toggled.connect(
+            lambda v: self._on_setting_toggled("compact_mode", v)
+        )
+        form.addRow("", self.compact_check)
 
-        reset_btn = QPushButton("🔄  Сбросить к стандартной")
-        reset_btn.setObjectName("SecondaryButton")
-        reset_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        reset_btn.setFixedWidth(280)
-        reset_btn.clicked.connect(self._reset_theme)
-        buttons.addWidget(reset_btn)
+        # Анимации (заглушка на будущее)
+        self.animations_check = QCheckBox("Анимации интерфейса")
+        self.animations_check.setChecked(self.user_settings.get("animations_enabled", True))
+        self.animations_check.toggled.connect(
+            lambda v: self._on_setting_toggled("animations_enabled", v)
+        )
+        form.addRow("", self.animations_check)
 
-        buttons.addStretch(1)
-        layout.addLayout(buttons)
+        return group
 
-        # --- Путь ---
-        path_label = QLabel(f"Файл настроек: {get_user_settings_path()}")
-        path_label.setObjectName("SettingsPath")
-        path_label.setWordWrap(True)
-        layout.addWidget(path_label)
+    def _build_settings_network(self) -> QGroupBox:
+        """Секция «Сеть и обновления»."""
+        group = QGroupBox("Сеть и обновления")
+        group.setObjectName("SettingsGroup")
+        form = QFormLayout(group)
+        form.setContentsMargins(16, 20, 16, 16)
+        form.setSpacing(12)
 
-        layout.addStretch(1)
+        # Автопроверка обновлений
+        self.check_updates_check = QCheckBox("Проверять обновления при запуске")
+        self.check_updates_check.setChecked(
+            self.user_settings.get("check_updates_on_start", True)
+        )
+        self.check_updates_check.toggled.connect(
+            lambda v: self._on_setting_toggled("check_updates_on_start", v)
+        )
+        form.addRow("", self.check_updates_check)
 
-        return page
+        # Автообновление каталога
+        self.refresh_catalog_check = QCheckBox("Обновлять каталог при запуске")
+        self.refresh_catalog_check.setChecked(
+            self.user_settings.get("refresh_catalog_on_start", True)
+        )
+        self.refresh_catalog_check.toggled.connect(
+            lambda v: self._on_setting_toggled("refresh_catalog_on_start", v)
+        )
+        form.addRow("", self.refresh_catalog_check)
 
+        # Показывать баннер
+        self.show_banner_check = QCheckBox("Показывать баннер «Доступно обновление»")
+        self.show_banner_check.setChecked(
+            self.user_settings.get("show_update_banner", True)
+        )
+        self.show_banner_check.toggled.connect(
+            lambda v: self._on_setting_toggled("show_update_banner", v)
+        )
+        form.addRow("", self.show_banner_check)
+
+        return group
+
+    def _build_settings_download(self) -> QGroupBox:
+        """Секция «Скачивание»."""
+        group = QGroupBox("Скачивание")
+        group.setObjectName("SettingsGroup")
+        form = QFormLayout(group)
+        form.setContentsMargins(16, 20, 16, 16)
+        form.setSpacing(12)
+
+        self.auto_run_check = QCheckBox(
+            "Запускать установщик после скачивания (без вопроса)"
+        )
+        self.auto_run_check.setChecked(
+            self.user_settings.get("auto_run_after_download", False)
+        )
+        self.auto_run_check.toggled.connect(
+            lambda v: self._on_setting_toggled("auto_run_after_download", v)
+        )
+        form.addRow("", self.auto_run_check)
+
+        return group
+
+    def _build_settings_app_page(self) -> QGroupBox:
+        """Секция «Страница программы»."""
+        group = QGroupBox("Страница программы")
+        group.setObjectName("SettingsGroup")
+        form = QFormLayout(group)
+        form.setContentsMargins(16, 20, 16, 16)
+        form.setSpacing(12)
+
+        self.show_screenshots_check = QCheckBox("Показывать скриншоты")
+        self.show_screenshots_check.setChecked(
+            self.user_settings.get("show_screenshots", True)
+        )
+        self.show_screenshots_check.toggled.connect(
+            lambda v: self._on_setting_toggled("show_screenshots", v)
+        )
+        form.addRow("", self.show_screenshots_check)
+
+        return group
     # ------------------------------------------------------------------
     # Обработчики темы
     # ------------------------------------------------------------------
+    def _on_theme_changed(self) -> None:
+        """Применяет выбранную тему."""
+        theme_id = self.theme_combo.currentData()
+        if not theme_id:
+            return
+        self.user_settings["theme"] = theme_id
+        print(f"[main] Новая тема: {theme_id}")
+        save_user_settings(self.user_settings)
+        self._apply_styles()
+
+    def _on_font_size_changed(self) -> None:
+        """Применяет выбранный размер шрифта."""
+        size = self.font_size_combo.currentData()
+        if not size:
+            return
+        self.user_settings["font_size"] = size
+        print(f"[main] Новый размер шрифта: {size}")
+        save_user_settings(self.user_settings)
+        self._apply_styles()
+
+    def _on_setting_toggled(self, key: str, value: bool) -> None:
+        """Обработчик переключения чекбокса."""
+        self.user_settings[key] = value
+        print(f"[main] {key} = {value}")
+        save_user_settings(self.user_settings)
+
+        # Если изменили что-то, влияющее на запуск — перезапуск нужен позже
+        # Если изменили что-то, влияющее на UI — применяем сразу
+        if key in ("compact_mode",):
+            # В будущем можно перестраивать карточки
+            pass
+
+        if key == "show_update_banner" and not value:
+            # Скрыть баннер, если он был виден
+            self.update_banner.setVisible(False)
+
+    def _reset_all_settings(self) -> None:
+        """Сбрасывает все настройки к дефолтным."""
+        answer = QMessageBox.question(
+            self,
+            "Сбросить настройки?",
+            "Вернуть все настройки к стандартным значениям?",
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        # Сбрасываем в памяти
+        self.user_settings = dict(DEFAULTS)
+        save_user_settings(self.user_settings)
+
+        # Обновляем UI контролов
+        self._sync_settings_ui()
+
+        # Применяем стили
+        self._apply_styles()
+        print("[main] Все настройки сброшены к дефолтным")
+
+    def _sync_settings_ui(self) -> None:
+        """Обновляет значения UI-контролов из self.user_settings."""
+        # Тема
+        idx = self.theme_combo.findData(self.user_settings.get("theme", DEFAULT_THEME))
+        if idx >= 0:
+            self.theme_combo.blockSignals(True)
+            self.theme_combo.setCurrentIndex(idx)
+            self.theme_combo.blockSignals(False)
+
+        # Размер шрифта
+        idx = self.font_size_combo.findData(self.user_settings.get("font_size", 14))
+        if idx >= 0:
+            self.font_size_combo.blockSignals(True)
+            self.font_size_combo.setCurrentIndex(idx)
+            self.font_size_combo.blockSignals(False)
+
+        # Чекбоксы
+        for key, checkbox in [
+            ("compact_mode", self.compact_check),
+            ("animations_enabled", self.animations_check),
+            ("check_updates_on_start", self.check_updates_check),
+            ("refresh_catalog_on_start", self.refresh_catalog_check),
+            ("show_update_banner", self.show_banner_check),
+            ("auto_run_after_download", self.auto_run_check),
+            ("show_screenshots", self.show_screenshots_check),
+        ]:
+            checkbox.blockSignals(True)
+            checkbox.setChecked(self.user_settings.get(key, False))
+            checkbox.blockSignals(False)
+
     def _on_theme_changed(self) -> None:
         """Применяет выбранную тему."""
         theme_id = self.theme_combo.currentData()
@@ -303,6 +530,19 @@ class MainWindow(QMainWindow):
         self._apply_styles()
         print("[main] Тема сброшена к стандартной")
 
+        def _on_setting_toggled(self, key: str, value: bool) -> None:
+            """Обработчик переключения чекбокса."""
+            self.user_settings[key] = value
+            print(f"[main] {key} = {value}")
+            save_user_settings(self.user_settings)
+
+            # Если изменили что-то, влияющее на UI — применяем сразу
+            if key == "show_update_banner" and not value:
+                self.update_banner.setVisible(False)
+
+            if key == "compact_mode":
+                self._apply_styles()
+
     # ------------------------------------------------------------------
     # Обработчики навигации
     # ------------------------------------------------------------------
@@ -331,9 +571,15 @@ class MainWindow(QMainWindow):
         self._checker.start()
 
     def _on_update_available(self, info: dict) -> None:
+        """Есть обновление — показываем баннер (если включено в настройках)."""
         self._update_info = info
-        self.update_banner.setVisible(True)
-        print(f"[main] Показан баннер обновления: v{info.get('version')}")
+        show_banner = self.user_settings.get("show_update_banner", True)
+        if show_banner:
+            self.update_banner.setVisible(True)
+            print(f"[main] Показан баннер обновления: v{info.get('version')}")
+        else:
+            print(f"[main] Баннер отключён, но обновление есть: v{info.get('version')}")
+
         if self._manual_check:
             self._manual_check = False
             self._show_update_dialog()
@@ -444,12 +690,26 @@ class MainWindow(QMainWindow):
         text_dim = "#444444" if is_light else "#b8b8b8"
         text_soft = "#3a3a3a" if is_light else "#c8c8c8"
 
+        # Размер шрифта и компактный режим
+        font_size = self.user_settings.get("font_size", 14)
+        compact = self.user_settings.get("compact_mode", False)
+
+        # Размеры карточек и отступов: обычные или компактные
+        if compact:
+            card_padding = "8px 12px"
+            card_spacing = "6px"
+            icon_size = "48px"
+        else:
+            card_padding = "12px 16px"
+            card_spacing = "10px"
+            icon_size = "64px"
+
         styles = """
             QMainWindow, QWidget {
                 background-color: __BACKGROUND__;
                 color: __TEXT_NORMAL__;
                 font-family: "Segoe UI", "Inter", sans-serif;
-                font-size: 14px;
+                font-size: __FONT_SIZE__px;
             }
 
             #Sidebar {
@@ -809,6 +1069,7 @@ class MainWindow(QMainWindow):
             "__TEXT_DIM__": text_dim,
             "__TEXT_SOFT__": text_soft,
             "__TEXT_MUTED__": text_muted,
+            "__FONT_SIZE__": str(font_size),
         }
         for key, value in replacements.items():
             styles = styles.replace(key, value)
