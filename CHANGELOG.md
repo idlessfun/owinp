@@ -8,11 +8,35 @@ and versions follow [Semantic Versioning](https://semver.org/lang/ru/).
 ## [Unreleased]
 
 ### Planned
-- Buttons of different types (download / open link)
-- Interface color palette
-- "Settings" section in the application
 - GitHub token in settings
-- English localization of the interface and code
+- Admin tool adaptation for per-language cards
+
+## [0.2.0] — 2026-09-20
+
+### Added
+- **Multilingual support**: the app is now fully localized (RU + EN)
+- **Translator system** based on JSON files (`app/locales/*.json`)
+- **Language switcher** in Settings with auto-restart
+- **Language folders** for program cards (`app/apps/<lang>/`)
+- **Per-language cache** (`cache/apps/<lang>/`)
+- **Catalog downloader** now fetches only the current language
+- **Buttons of different types**: `download` / `link`
+- **Interface color themes** (5 presets: dark-blue, dark-red, dark-green, dark-purple, light)
+- **Extended settings page**: theme, font size, compact mode, auto-update, auto-run, screenshots
+- **Theme support in dialogs** (download dialog, update dialog)
+- **Cache migration** from the old flat structure to per-language folders
+- **"Clear cache" button** on the main page
+- **Throttling respects language changes** — updates immediately when the language is switched
+
+### Fixed
+- Crash when closing the download dialog
+- Program icon not showing in the download dialog
+- Double `emit` when updating the catalog
+- Old flat cache files were not removed automatically
+
+### Changed
+- Code fully translated to English (docstrings, comments, logs)
+- README updated for the new structure
 
 ## [0.1.1] — 2026-09-19
 

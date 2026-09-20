@@ -52,10 +52,8 @@
 
     "settings.language": "Язык:",
 
-    "dialog.restart.title": "Перезапустить приложение?",
-    "dialog.restart.text": "Чтобы применить новый язык, нужно перезапустить приложение.\n\nПерезапустить сейчас?",
-    "dialog.restart.error_title": "Ошибка перезапуска",
-    "dialog.restart.error_text": "Не удалось перезапустить приложение автоматически.\n\nЗакройте и откройте OWINP вручную.\n\nОшибка: {error}",
+    "dialog.restart.title": "Язык изменён",
+    "dialog.restart.text": "Чтобы применить новый язык, закройте и откройте OWINP вручную.\n\nЯзык сохранён и применится при следующем запуске.",
 
     "dialog.update.title": "Доступно обновление",
     "dialog.update.header": "🎉 Доступно обновление OWINP",

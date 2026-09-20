@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QCheckBox,
     QScrollArea,
+    QApplication,
 )
 
 from app import __version__
@@ -461,7 +462,7 @@ class MainWindow(QMainWindow):
         self._apply_styles()
 
     def _on_language_changed(self) -> None:
-        """Asks to restart the app to apply the new language."""
+        """Asks the user to restart the app manually to apply the new language."""
         lang_code = self.language_combo.currentData()
         if not lang_code:
             return
@@ -472,28 +473,11 @@ class MainWindow(QMainWindow):
         save_user_settings(self.user_settings)
         print(f"[main] New language: {lang_code}")
 
-        answer = QMessageBox.question(
+        QMessageBox.information(
             self,
             t("dialog.restart.title"),
             t("dialog.restart.text"),
         )
-        if answer == QMessageBox.StandardButton.Yes:
-            self._restart_app()
-
-    def _restart_app(self) -> None:
-        """Restarts the application (using os.execv)."""
-        import sys
-        import os
-        print("[main] Restarting the application...")
-        try:
-            os.execv(sys.executable, [sys.executable] + sys.argv)
-        except Exception as e:
-            print(f"[main] Failed to restart: {e}")
-            QMessageBox.warning(
-                self,
-                t("dialog.restart.error_title"),
-                t("dialog.restart.error_text", error=str(e)),
-            )
 
     def _on_setting_toggled(self, key: str, value: bool) -> None:
         """Checkbox toggle handler."""

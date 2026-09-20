@@ -1,5 +1,5 @@
 #define MyAppName "OWINP"
-#define MyAppVersion "0.1.1"
+#define MyAppVersion "0.2.0"
 #define MyAppPublisher "OWINP Contributors"
 #define MyAppURL "https://github.com/idlessfun/owinp"
 #define MyAppExeName "OWINP.exe"
