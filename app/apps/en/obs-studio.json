@@ -1,0 +1,43 @@
+{
+    "id": "obs-studio",
+    "name": "OBS Studio",
+    "description": "Free software for video recording and streaming.",
+    "version": "32.1.2",
+    "category": "Media",
+    "size_mb": 120.0,
+    "website": "https://obsproject.com/",
+    "downloads": [
+        {
+            "label": "Download for Windows",
+            "url": "https://github.com/obsproject/obs-studio/releases/download/32.1.2/OBS-Studio-32.1.2-Windows-x64-Installer.exe",
+            "primary": true
+        }
+    ],
+    "is_open_source": true,
+    "is_portable": false,
+    "developer": "OBS Project",
+    "long_description": "OBS Studio is free open-source software for video recording and live streaming. It supports Windows, macOS, and Linux.",
+    "release_date": "2026-05-01",
+    "license": "GPL-2.0",
+    "icon": "obs-studio.png",
+    "requirements": [
+        "Windows 10 or 11 (64-bit)",
+        "Intel Core i5 4th gen or AMD FX 6300",
+        "4 GB of RAM",
+        "DirectX 10.1 compatible GPU",
+        "600 MB of free space"
+    ],
+    "features": [
+        "Video recording and streaming",
+        "Scenes and transitions support",
+        "Audio mixer",
+        "Plugins and extensions",
+        "Cross-platform (Windows, macOS, Linux)"
+    ],
+    "tags": [
+        "streaming",
+        "recording",
+        "video",
+        "broadcast"
+    ]
+}

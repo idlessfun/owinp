@@ -334,3 +334,34 @@ def should_check_version_now() -> bool:
     if last == 0:
         return True
     return (time.time() - last) > VERSION_CHECK_INTERVAL
+
+# --- Migration from old flat cache structure ---
+
+
+def migrate_old_cache() -> None:
+    """
+    Migrates the old flat cache structure to per-language folders.
+
+    In v0.1.x, all JSON files were stored directly in cache/apps/.
+    In v0.2.x, they are stored in cache/apps/<lang>/.
+
+    This function removes old flat *.json files (directly in cache/apps/)
+    and leaves the language subfolders untouched.
+
+    Safe to call multiple times — does nothing if there are no old files.
+    """
+    if not CACHE_APPS.exists():
+        return
+
+    removed = 0
+    for old_file in CACHE_APPS.glob("*.json"):
+        # Skip files inside language subfolders (they won't match this glob)
+        try:
+            print(f"[cache] Migrating: removing old flat file '{old_file.name}'")
+            old_file.unlink()
+            removed += 1
+        except Exception as e:
+            print(f"[cache] Failed to remove {old_file.name}: {e}")
+
+    if removed:
+        print(f"[cache] Migration complete: removed {removed} old flat JSON files")

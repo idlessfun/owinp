@@ -1,0 +1,44 @@
+{
+    "id": "vlc",
+    "name": "VLC Media Player",
+    "description": "Free media player that plays almost everything.",
+    "version": "3.0.21",
+    "category": "Media",
+    "size_mb": 42.9,
+    "website": "https://www.videolan.org/vlc/",
+    "downloads": [
+        {
+            "label": "Download",
+            "url": "https://get.videolan.org/vlc/3.0.21/win64/vlc-3.0.21-win64.exe",
+            "primary": true
+        },
+        {
+            "label": "Mirror",
+            "url": "https://mirror.yandex.ru/mirrors/videolan/vlc/3.0.21/win64/vlc-3.0.21-win64.exe",
+            "primary": false
+        }
+    ],
+    "is_open_source": true,
+    "is_portable": false,
+    "developer": "VideoLAN",
+    "long_description": "VLC is a powerful open-source media player. It supports many formats without additional codecs, works with DVDs, audio CDs, and network streams.",
+    "release_date": "2024-06-12",
+    "license": "GPL-2.0",
+    "icon": "vlc.png",
+    "requirements": [
+        "Windows 7 or newer",
+        "64-bit system"
+    ],
+    "features": [
+        "Support for all popular formats",
+        "Playback without additional codecs",
+        "Open source code",
+        "No ads or telemetry"
+    ],
+    "tags": [
+        "media",
+        "video",
+        "audio",
+        "player"
+    ]
+}

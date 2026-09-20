@@ -28,6 +28,10 @@ def main() -> int:
     else:
         print(f"[main] Icon not found: {icon_path}")
 
+    # Migrate old flat cache structure (v0.1.x -> v0.2.x)
+    from app.core.cache_manager import migrate_old_cache
+    migrate_old_cache()
+
     window = MainWindow()
     window.show()
 
