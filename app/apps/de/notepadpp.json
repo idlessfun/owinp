@@ -1,0 +1,40 @@
+{
+  "id": "notepadpp",
+  "name": "Notepad++",
+  "description": "Powerful text editor with syntax highlighting.",
+  "version": "8.6.9",
+  "category": "Development",
+  "size_mb": 4.8,
+  "website": "https://notepad-plus-plus.org/",
+  "downloads": [
+    {
+      "label": "Download",
+      "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.Installer.x64.exe",
+      "primary": true
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": false,
+  "developer": "Don Ho",
+  "long_description": "Notepad++ is a free text editor that replaces the standard Windows Notepad. It supports syntax highlighting for over 80 programming languages, code folding, multiple tabs, regular expressions, and much more.",
+  "release_date": "2024-11-24",
+  "license": "GPL",
+  "icon": "notepadpp.png",
+  "requirements": [
+    "Windows 7 or newer",
+    "64-bit system"
+  ],
+  "features": [
+    "Syntax highlighting for 80+ languages",
+    "Multiple tabs",
+    "Regular expressions",
+    "Plugins and extensions",
+    "Open source code"
+  ],
+  "tags": [
+    "editor",
+    "text",
+    "code",
+    "development"
+  ]
+}
