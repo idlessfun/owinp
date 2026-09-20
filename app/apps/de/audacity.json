@@ -1,0 +1,41 @@
+{
+  "id": "audacity",
+  "name": "Audacity",
+  "description": "Free open-source audio editor.",
+  "version": "3.7.4",
+  "category": "Media",
+  "size_mb": 35.0,
+  "website": "https://www.audacityteam.org/",
+  "downloads": [
+    {
+      "label": "Download for Windows",
+      "url": "https://github.com/audacity/audacity/releases/download/Audacity-3.7.4/audacity-win-3.7.4-64bit.exe",
+      "primary": true
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": false,
+  "developer": "Muse Group",
+  "long_description": "Audacity is a free multi-track audio editor and recording application with open source code. It supports Windows, macOS, and Linux.",
+  "release_date": "2025-05-22",
+  "license": "GPL-2.0",
+  "icon": "audacity.png",
+  "requirements": [
+    "Windows 10 or 11 (64-bit)",
+    "4 GB of RAM",
+    "100 MB of free space"
+  ],
+  "features": [
+    "Multi-track recording and editing",
+    "Support for many audio formats",
+    "Effects and plugins",
+    "Spectrogram and analysis",
+    "Open source code"
+  ],
+  "tags": [
+    "audio",
+    "editor",
+    "sound",
+    "recording"
+  ]
+}
