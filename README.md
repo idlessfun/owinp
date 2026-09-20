@@ -11,8 +11,8 @@
 
 **Ready-made version for Windows** — no need to install Python:
 
-- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.1.0/OWINP-Setup-0.1.0.exe)** — regular installation into the system (21.7 MB)
-- 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.1.0/OWINP-Portable-0.1.0.zip)** — unpack and run (29 MB)
+- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.2.0/OWINP-Setup-0.2.0.exe)** — regular installation into the system (21.7 MB)
+- 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.2.0/OWINP-Portable-0.2.0.zip)** — unpack and run (29 MB)
 
 Both versions are in the [**Releases**](https://github.com/idlessfun/owinp/releases/latest) section.
 
@@ -67,12 +67,18 @@ python main.py
 
 ## 🔒 Security
 
-The application has been checked on **VirusTotal**:
+⚠️ Note about Microsoft Defender
 
-- **Installer**: 1/68 (only DeepInstinct — false positive of the ML scanner)
-- **Portable**: 1/64 (only Elastic — false positive of the ML scanner)
+Microsoft Defender may flag the installer as Trojan:Win32/Wacatac.C!ml — this is a known false positive for Inno Setup installers.
 
-**Kaspersky**, **DrWeb**, **Microsoft**, **ESET**, **BitDefender**, **Sophos**, **Symantec**, **Avast** — confirmed cleanliness.
+All other 66 antivirus engines (Kaspersky, DrWeb, ESET, BitDefender, Avast, and others) report the file as clean.
+
+If Defender blocks the installer:
+
+    Click "More info" → "Run anyway"
+    Or use the portable version — it is not affected (VirusTotal: 0/70)
+
+We have already submitted the file to Microsoft for review.
 
 ### What the application does on the network
 
