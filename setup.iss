@@ -18,8 +18,8 @@ DisableProgramGroupPage=yes
 OutputDir=build
 OutputBaseFilename=OWINP-Setup-{#MyAppVersion}
 SetupIconFile=app\resources\icon.ico
-Compression=lzma2
-SolidCompression=yes
+Compression=zip
+SolidCompression=no
 WizardStyle=modern
 PrivilegesRequired=lowest
 
