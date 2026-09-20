@@ -1,6 +1,6 @@
 """
 OWINP — Open Windows Programs
-Точка входа приложения.
+Application entry point.
 """
 
 import sys
@@ -14,19 +14,19 @@ from app.ui.main_window import MainWindow
 
 
 def main() -> int:
-    """Создаёт приложение и показывает главное окно."""
+    """Creates an application and displays the main window."""
     app = QApplication(sys.argv)
 
     app.setApplicationName("OWINP")
     app.setApplicationDisplayName(f"v{__version__}")
     app.setOrganizationName("OWINP")
 
-    # Иконка приложения — используется в панели задач, Alt+Tab и заголовке окна
+    # Application icon — used in the taskbar, Alt+Tab, and the window title bar
     icon_path = Path(__file__).parent / "app" / "resources" / "icon.png"
     if icon_path.exists():
         app.setWindowIcon(QIcon(str(icon_path)))
     else:
-        print(f"[main] Иконка не найдена: {icon_path}")
+        print(f"[main] Icon not found: {icon_path}")
 
     window = MainWindow()
     window.show()

@@ -1,50 +1,50 @@
-# Политика безопасности
+# Security Policy
 
-## Поддерживаемые версии
+## Supported Versions
 
-Мы поддерживаем только **последнюю стабильную версию** OWINP. Более старые версии могут не получать обновления безопасности.
+We only support the **latest stable version** of OWINP. Older versions may not receive security updates.
 
-| Версия | Поддерживается |
+| Version | Supported      |
 |--------|:--------------:|
 | 0.1.x  | ✅             |
 | < 0.1  | ❌             |
 
-## Как сообщить об уязвимости
+## How to report a vulnerability
 
-**Пожалуйста, не создавайте публичный Issue** для сообщений об уязвимостях — это может раскрыть проблему до того, как она будет исправлена.
+**Please do not create a public Issue** for reporting vulnerabilities — this may disclose the problem before it is fixed.
 
-**Используйте один из следующих способов:**
+**Use one of the following methods:**
 
-1. **GitHub Security Advisories** (предпочтительно):
-   - Перейдите на вкладку [Security](https://github.com/idlessfun/owinp/security/advisories) репозитория
-   - Нажмите **«Report a vulnerability»**
-   - Опишите проблему
+1. **GitHub Security Advisories** (preferred):
+   - Go to the [Security](https://github.com/idlessfun/owinp/security/advisories) tab of the repository
+   - Click **"Report a vulnerability"**
+   - Describe the problem
 
-2. **Приватное сообщение мейнтейнеру** через GitHub.
+2. **Private message to the maintainer** via GitHub.
 
-## Что указать в сообщении
+## What to include in the report
 
-- **Описание** уязвимости
-- **Шаги** для воспроизведения
-- **Версия** OWINP, где обнаружена проблема
-- **Версия** Python и операционной системы
-- **Возможные** последствия
-- **Ваши** идеи по исправлению (опционально)
+- **Description** of the vulnerability
+- **Steps** to reproduce
+- **Version** of OWINP where the problem was found
+- **Version** of Python and the operating system
+- **Possible** consequences
+- **Your** ideas for fixing it (optional)
 
-## Что вы можете ожидать
+## What you can expect
 
-- **Ответ в течение 48 часов** — мы подтвердим получение сообщения.
-- **Оценку** серьёзности и план исправления.
-- **Уведомление** о ходе исправления.
-- **Публичное упоминание** в CHANGELOG после исправления (если вы не против).
+- **A response within 48 hours** — we will confirm receipt of the report.
+- **An assessment** of severity and a fix plan.
+- **Notification** of the fix progress.
+- **Public mention** in the CHANGELOG after the fix (if you don't mind).
 
-## Область охвата
+## Scope
 
-Мы особенно заинтересованы в сообщениях о:
+We are especially interested in reports about:
 
-- Уязвимостях в коде приложения
-- Проблемах с загрузкой и проверкой данных
-- Проблемах с сетевыми запросами
-- Проблемах с обработкой JSON-файлов каталога
+- Vulnerabilities in the application code
+- Problems with downloading and verifying data
+- Problems with network requests
+- Problems with processing JSON catalog files
 
-**Спасибо** за помощь в защите OWINP и его пользователей! 🙏
+**Thank you** for helping protect OWINP and its users! 🙏

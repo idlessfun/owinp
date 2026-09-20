@@ -1,0 +1,122 @@
+{
+    "_language_name": "English",
+
+    "nav.home": "Home",
+    "nav.programs": "Programs",
+    "nav.settings": "Settings",
+
+    "banner.new_version": "🎉 A new version of OWINP is available",
+    "banner.whats_new": "What's New",
+
+    "home.title": "Welcome to OWINP",
+    "home.subtitle": "A directory of open-source software for Windows.\nVersion: v{version}",
+    "home.check_updates": "🔄 Check for updates",
+    "home.clear_cache": "🧹 Clear the cache",
+
+    "settings.title": "Settings",
+    "settings.subtitle": "Customize the app's appearance and behavior. Changes take effect immediately and are saved across sessions.",
+    "settings.reset_all": "🔄  Reset all settings",
+    "settings.config_file": "Configuration file: {path}",
+
+    "settings.section.interface": "Interface",
+    "settings.theme": "Theme:",
+    "settings.font_size": "Font Size:",
+    "settings.compact_mode": "Compact mode (smaller cards)",
+    "settings.animations": "Interface Animations",
+
+    "settings.section.network": "Network and Updates",
+    "settings.check_updates_on_start": "Check for updates at startup",
+    "settings.refresh_catalog_on_start": "Update the catalog on startup",
+    "settings.show_update_banner": "Display the «Update Available» banner",
+
+    "settings.section.download": "Download",
+    "settings.auto_run": "Run the installer after downloading (without prompting)",
+
+    "settings.section.program_page": "Program Page",
+    "settings.show_screenshots": "Show screenshots",
+
+    "dialog.reset_settings.title": "Reset settings?",
+    "dialog.reset_settings.text": "Restore all settings to their defaults?",
+
+    "dialog.updates.title": "Updates",
+    "dialog.updates.latest": "You have the latest version of OWINP ({version}).",
+    "dialog.updates.error_title": "Validation error",
+    "dialog.updates.error_text": "Failed to check for updates\n\nCheck your Internet connection.\n\nError: {error}",
+
+    "dialog.cache.title": "Clear the cache?",
+    "dialog.cache.text": "The following will be deleted:\n• downloaded JSON program cards\n• icons and screenshots\n\nThe next time you run the program, the directory will be downloaded again.\n\nContinue?",
+    "dialog.cache.ok_title": "Cache cleared ✅",
+    "dialog.cache.ok_text": "The cache has been successfully cleared.\n\nThe next time OWINP starts, it will load the latest catalog.",
+    "dialog.cache.error_title": "Error",
+    "dialog.cache.error_text": "The cache could not be completely cleared.\nCheck the console for errors.",
+
+    "settings.language": "Language:",
+
+    "dialog.restart.title": "Restart the application?",
+    "dialog.restart.text": "To apply the new language, the application needs to restart.\n\nRestart now?",
+    "dialog.restart.error_title": "Restart error",
+    "dialog.restart.error_text": "Failed to restart the application automatically.\n\nClose and open OWINP manually.\n\nError: {error}",
+
+    "dialog.update.title": "Update Available",
+    "dialog.update.header": "🎉 A new version of OWINP is available",
+    "dialog.update.current": "Current: v{version}",
+    "dialog.update.new": "New: v{version}",
+    "dialog.update.whats_new": "What's new:",
+    "dialog.update.no_description": "No release description available.",
+    "dialog.update.date": "Release date: {date}",
+    "dialog.update.later": "Later",
+    "dialog.update.download": "Download from the release page",
+
+    "common.ok": "OK",
+    "common.error": "Error",
+
+    "size.b": "B",
+    "size.kb": "KB",
+    "size.mb": "MB",
+    "size.gb": "GB",
+    "size.tb": "TB",
+
+    "download.title": "Download — {name}",
+    "download.header": "Downloading: {name}",
+    "download.connecting": "Connecting…",
+    "download.details_init": "0 B / 0 B · 0 B/s",
+    "download.cancel": "Cancel",
+    "download.done_status": "Download complete",
+    "download.saved_to": "File saved to:\n{path}",
+    "download.no_url": "No download URL is specified for this program.",
+    "download.error_title": "Download error",
+    "download.error_text": "Failed to download the file:\n\n{error}",
+    "download.run_error": "Failed to run the file:\n{error}",
+    "download.open_folder": "Open folder",
+    "download.run": "Run",
+    "download.per_second": "/s",
+
+    "details.back": "← Back",
+    "details.developer": "Developer: {name}",
+    "details.no_name": "Unnamed",
+    "details.download": "Download",
+    "details.open_website": "Open website",
+
+    "details.section.description": "Description",
+    "details.section.features": "Features",
+    "details.section.requirements": "System requirements",
+    "details.section.specs": "Specifications",
+    "details.section.screenshots": "Screenshots",
+
+    "details.spec.version": "Version",
+    "details.spec.release_date": "Release date",
+    "details.spec.category": "Category",
+    "details.spec.size": "Size",
+    "details.spec.license": "License",
+
+    "apps.title": "Programs",
+    "apps.refresh": "🔄 Refresh",
+    "apps.refreshing": "⏳ Refreshing...",
+    "apps.search_placeholder": "🔍 Search by name, description, or tags...",
+    "apps.all_categories": "All categories",
+    "apps.found": "Found: {count}",
+    "apps.empty_no_apps": "No programs yet. Add a JSON file to app/apps/.",
+    "apps.empty_not_found": "Nothing found. Try changing the query or category.",
+    "apps.save_as": "Save file as",
+    "apps.details_button": "Details"
+}

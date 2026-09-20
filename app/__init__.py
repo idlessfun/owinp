@@ -1,7 +1,7 @@
 """
 OWINP — Open Windows Programs.
 
-Open-source каталог программ для Windows с удобным интерфейсом.
+An open-source directory of Windows programs with a user-friendly interface.
 """
 
 __version__ = "0.2.0"

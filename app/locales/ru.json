@@ -1,0 +1,122 @@
+{
+    "_language_name": "Русский",
+
+    "nav.home": "Главная",
+    "nav.programs": "Программы",
+    "nav.settings": "Настройки",
+
+    "banner.new_version": "🎉 Доступна новая версия OWINP",
+    "banner.whats_new": "Что нового",
+
+    "home.title": "Добро пожаловать в OWINP",
+    "home.subtitle": "Каталог open-source программ для Windows.\nВерсия: v{version}",
+    "home.check_updates": "🔄 Проверить обновления",
+    "home.clear_cache": "🧹 Очистить кэш",
+
+    "settings.title": "Настройки",
+    "settings.subtitle": "Настрой внешний вид и поведение приложения. Изменения применяются сразу и сохраняются между запусками.",
+    "settings.reset_all": "🔄  Сбросить все настройки",
+    "settings.config_file": "Файл настроек: {path}",
+
+    "settings.section.interface": "Интерфейс",
+    "settings.theme": "Тема:",
+    "settings.font_size": "Размер шрифта:",
+    "settings.compact_mode": "Компактный режим (карточки меньше)",
+    "settings.animations": "Анимации интерфейса",
+
+    "settings.section.network": "Сеть и обновления",
+    "settings.check_updates_on_start": "Проверять обновления при запуске",
+    "settings.refresh_catalog_on_start": "Обновлять каталог при запуске",
+    "settings.show_update_banner": "Показывать баннер «Доступно обновление»",
+
+    "settings.section.download": "Скачивание",
+    "settings.auto_run": "Запускать установщик после скачивания (без вопроса)",
+
+    "settings.section.program_page": "Страница программы",
+    "settings.show_screenshots": "Показывать скриншоты",
+
+    "dialog.reset_settings.title": "Сбросить настройки?",
+    "dialog.reset_settings.text": "Вернуть все настройки к стандартным значениям?",
+
+    "dialog.updates.title": "Обновления",
+    "dialog.updates.latest": "У вас последняя версия OWINP ({version}).",
+    "dialog.updates.error_title": "Ошибка проверки",
+    "dialog.updates.error_text": "Не удалось проверить обновления.\n\nПроверьте подключение к интернету.\n\nОшибка: {error}",
+
+    "dialog.cache.title": "Очистить кэш?",
+    "dialog.cache.text": "Будут удалены:\n• скачанные JSON-карточки программ\n• иконки и скриншоты\n\nПри следующем запуске каталог скачается заново.\n\nПродолжить?",
+    "dialog.cache.ok_title": "Кэш очищен ✅",
+    "dialog.cache.ok_text": "Кэш успешно очищен.\n\nПри следующем запуске OWINP загрузит свежий каталог.",
+    "dialog.cache.error_title": "Ошибка",
+    "dialog.cache.error_text": "Не удалось полностью очистить кэш.\nПроверь консоль на ошибки.",
+
+    "settings.language": "Язык:",
+
+    "dialog.restart.title": "Перезапустить приложение?",
+    "dialog.restart.text": "Чтобы применить новый язык, нужно перезапустить приложение.\n\nПерезапустить сейчас?",
+    "dialog.restart.error_title": "Ошибка перезапуска",
+    "dialog.restart.error_text": "Не удалось перезапустить приложение автоматически.\n\nЗакройте и откройте OWINP вручную.\n\nОшибка: {error}",
+
+    "dialog.update.title": "Доступно обновление",
+    "dialog.update.header": "🎉 Доступно обновление OWINP",
+    "dialog.update.current": "Текущая: v{version}",
+    "dialog.update.new": "Новая: v{version}",
+    "dialog.update.whats_new": "Что нового:",
+    "dialog.update.no_description": "Описание релиза отсутствует.",
+    "dialog.update.date": "Дата выпуска: {date}",
+    "dialog.update.later": "Позже",
+    "dialog.update.download": "Скачать со страницы релиза",
+
+    "common.ok": "ОК",
+    "common.error": "Ошибка",
+
+    "size.b": "Б",
+    "size.kb": "КБ",
+    "size.mb": "МБ",
+    "size.gb": "ГБ",
+    "size.tb": "ТБ",
+
+    "download.title": "Загрузка — {name}",
+    "download.header": "Загрузка: {name}",
+    "download.connecting": "Подключение…",
+    "download.details_init": "0 Б / 0 Б · 0 Б/с",
+    "download.cancel": "Отмена",
+    "download.done_status": "Загрузка завершена",
+    "download.saved_to": "Файл сохранён:\n{path}",
+    "download.no_url": "У программы не указана ссылка на скачивание.",
+    "download.error_title": "Ошибка загрузки",
+    "download.error_text": "Не удалось скачать файл:\n\n{error}",
+    "download.run_error": "Не удалось запустить файл:\n{error}",
+    "download.open_folder": "Открыть папку",
+    "download.run": "Запустить",
+    "download.per_second": "/с",
+
+    "details.back": "← Назад",
+    "details.developer": "Разработчик: {name}",
+    "details.no_name": "Без имени",
+    "details.download": "Скачать",
+    "details.open_website": "Открыть сайт",
+
+    "details.section.description": "Описание",
+    "details.section.features": "Возможности",
+    "details.section.requirements": "Системные требования",
+    "details.section.specs": "Характеристики",
+    "details.section.screenshots": "Скриншоты",
+
+    "details.spec.version": "Версия",
+    "details.spec.release_date": "Дата выпуска",
+    "details.spec.category": "Категория",
+    "details.spec.size": "Размер",
+    "details.spec.license": "Лицензия",
+
+    "apps.title": "Программы",
+    "apps.refresh": "🔄 Обновить",
+    "apps.refreshing": "⏳ Обновление...",
+    "apps.search_placeholder": "🔍 Поиск по названию, описанию или тегам...",
+    "apps.all_categories": "Все категории",
+    "apps.found": "Найдено: {count}",
+    "apps.empty_no_apps": "Пока нет ни одной программы. Добавь JSON в app/apps/.",
+    "apps.empty_not_found": "Ничего не найдено. Попробуй изменить запрос или категорию.",
+    "apps.save_as": "Куда сохранить файл",
+    "apps.details_button": "Подробнее"
+}

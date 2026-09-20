@@ -1,13 +1,13 @@
 """
-Страница подробной информации о программе.
+Program details page.
 
-Открывается при клике на карточку в списке.
-Показывает: иконку, название, разработчика, описание,
-характеристики, требования, возможности и кнопки действий.
+Opens when a card is clicked in the list.
+Shows: icon, name, developer, description,
+specs, requirements, features, and action buttons.
 """
 
 from pathlib import Path
-from app.core.cache_manager import find_icon, find_screenshot
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
@@ -20,19 +20,23 @@ from PySide6.QtWidgets import (
     QScrollArea,
 )
 
+from app.core.cache_manager import find_icon, find_screenshot
+from app.core.translator import t
+
+
 ICONS_DIR = Path(__file__).parent.parent / "resources" / "icons"
 SCREENSHOTS_DIR = Path(__file__).parent.parent / "resources" / "screenshots"
 
 
 class AppDetailsPage(QWidget):
     """
-    Подробная страница программы.
+    Program details page.
 
-    Сигналы:
-        back_requested — испускается при клике на «← Назад».
-                         AppsPage ловит его и возвращает список.
-        download_requested — испускается при клике на «Скачать».
-                             С app_data в качестве аргумента.
+    Signals:
+        back_requested — emitted on "← Back" click.
+                         AppsPage catches it and returns to the list.
+        download_requested — emitted on "Download" click.
+                             Passes app_data as argument.
     """
 
     back_requested = Signal()
@@ -43,18 +47,18 @@ class AppDetailsPage(QWidget):
 
         self._current_data: dict = {}
 
-        # Общий вертикальный layout
+        # Outer vertical layout
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
 
-        # ---- Верхняя панель с кнопкой «Назад» ----
+        # ---- Top bar with "Back" button ----
         top_bar = QFrame()
         top_bar.setObjectName("DetailsTopBar")
         top_layout = QHBoxLayout(top_bar)
         top_layout.setContentsMargins(20, 12, 20, 12)
 
-        back_btn = QPushButton("← Назад")
+        back_btn = QPushButton(t("details.back"))
         back_btn.setObjectName("BackButton")
         back_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         back_btn.clicked.connect(self.back_requested.emit)
@@ -64,7 +68,7 @@ class AppDetailsPage(QWidget):
 
         outer.addWidget(top_bar)
 
-        # ---- Прокручиваемая область с контентом ----
+        # ---- Scrollable content area ----
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setObjectName("DetailsScroll")
@@ -79,46 +83,45 @@ class AppDetailsPage(QWidget):
         outer.addWidget(scroll, stretch=1)
 
     # ------------------------------------------------------------------
-    # Заполнение страницы данными
+    # Filling the page with data
     # ------------------------------------------------------------------
     def set_app_data(self, data: dict) -> None:
-        """
-        Заполняет страницу данными программы.
-        Очищает предыдущее содержимое и строит новое.
-        """
+        """Fills the page with the program data. Clears previous content."""
         self._current_data = data
 
-        # Удаляем все виджеты со старого контента
+        # Remove all widgets from the old content
         self._clear_layout(self.content_layout)
 
-        # ---- Шапка: иконка + имя + разработчик + кнопки ----
+        # ---- Header: icon + name + developer + buttons ----
         self.content_layout.addWidget(self._build_header(data))
 
-        # ---- Описание ----
+        # ---- Description ----
         long_desc = data.get("long_description") or data.get("description")
         if long_desc:
-            self.content_layout.addWidget(self._build_section("Описание", long_desc))
+            self.content_layout.addWidget(
+                self._build_section(t("details.section.description"), long_desc)
+            )
 
-        # ---- Характеристики (таблица) ----
+        # ---- Specs (table) ----
         specs = self._build_specs(data)
         if specs:
             self.content_layout.addWidget(specs)
 
-        # ---- Возможности ----
+        # ---- Features ----
         features = data.get("features", [])
         if features:
             self.content_layout.addWidget(
-                self._build_section("Возможности", None, features)
+                self._build_section(t("details.section.features"), None, features)
             )
 
-        # ---- Системные требования ----
+        # ---- System requirements ----
         requirements = data.get("requirements", [])
         if requirements:
             self.content_layout.addWidget(
-                self._build_section("Системные требования", None, requirements)
+                self._build_section(t("details.section.requirements"), None, requirements)
             )
 
-        # ---- Скриншоты ----
+        # ---- Screenshots ----
         try:
             from app.core.user_settings import load_user_settings
             settings = load_user_settings()
@@ -132,11 +135,11 @@ class AppDetailsPage(QWidget):
                 self._build_screenshots(screenshots)
             )
 
-        # Растяжка в конце
+        # Stretch at the end
         self.content_layout.addStretch(1)
 
     def _clear_layout(self, layout) -> None:
-        """Удаляет все виджеты и под-layout'ы из layout'а."""
+        """Removes all widgets and sub-layouts from the layout."""
         while layout.count():
             item = layout.takeAt(0)
             widget = item.widget()
@@ -146,10 +149,10 @@ class AppDetailsPage(QWidget):
                 self._clear_layout(item.layout())
 
     # ------------------------------------------------------------------
-    # Построение блоков страницы
+    # Building page blocks
     # ------------------------------------------------------------------
     def _build_header(self, data: dict) -> QWidget:
-        """Шапка: большая иконка, имя, разработчик, кнопки действий."""
+        """Header: large icon, name, developer, action buttons."""
 
         header = QFrame()
         header.setObjectName("DetailsHeader")
@@ -158,17 +161,16 @@ class AppDetailsPage(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(20)
 
-        # --- Иконка 96x96 ---
-        # --- Иконка 96x96 (сначала кэш, потом встроенная) ---
+        # --- Icon 96x96 (cache first, then built-in) ---
         icon_label = QLabel()
         icon_label.setFixedSize(96, 96)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon_label.setObjectName("DetailsIcon")
 
-        # Ищем иконку в кэше
+        # Look for the icon in the cache
         icon_path = find_icon(data)
 
-        # Если в кэше нет — пробуем встроенную
+        # If not in cache — try the built-in one
         if icon_path is None:
             icon_name = data.get("icon", "")
             if icon_name:
@@ -189,16 +191,16 @@ class AppDetailsPage(QWidget):
 
         layout.addWidget(icon_label)
 
-        # --- Текстовый блок ---
+        # --- Text block ---
         text_block = QVBoxLayout()
         text_block.setSpacing(6)
 
-        name = QLabel(data.get("name", "Без имени"))
+        name = QLabel(data.get("name", t("details.no_name")))
         name.setObjectName("DetailsName")
 
         developer = data.get("developer", "")
         if developer:
-            dev_label = QLabel(f"Разработчик: {developer}")
+            dev_label = QLabel(t("details.developer", name=developer))
             dev_label.setObjectName("DetailsDeveloper")
             text_block.addWidget(name)
             text_block.addWidget(dev_label)
@@ -214,18 +216,18 @@ class AppDetailsPage(QWidget):
 
         layout.addLayout(text_block, stretch=1)
 
-        # --- Кнопки действий (справа) ---
+        # --- Action buttons (right) ---
         actions = QVBoxLayout()
         actions.setSpacing(8)
 
-        # Получаем список кнопок скачивания
+        # Get the list of download buttons
         download_buttons = self._get_download_buttons(data)
 
         for btn_info in download_buttons:
-            label = btn_info.get("label", "Скачать")
+            label = btn_info.get("label", t("details.download"))
             url = btn_info.get("url", "")
             is_primary = btn_info.get("primary", False)
-            btn_type = btn_info.get("type", "download")   # ← новое поле
+            btn_type = btn_info.get("type", "download")
 
             if not url:
                 continue
@@ -234,16 +236,16 @@ class AppDetailsPage(QWidget):
             btn.setObjectName("PrimaryButton" if is_primary else "SecondaryButton")
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.setFixedWidth(180)
-            # Передаём в сигнал данные, URL и тип кнопки
+            # Pass data, URL, and button type to the signal
             btn.clicked.connect(
-                lambda _, u=url, d=data, t=btn_type: self._on_download_clicked(u, d, t)
+                lambda _, u=url, d=data, bt=btn_type: self._on_download_clicked(u, d, bt)
             )
             actions.addWidget(btn)
 
-        # Кнопка «Открыть сайт» — отдельно
+        # "Open website" button — separately
         website = data.get("website", "")
         if website:
-            site_btn = QPushButton("Открыть сайт")
+            site_btn = QPushButton(t("details.open_website"))
             site_btn.setObjectName("SecondaryButton")
             site_btn.setCursor(Qt.CursorShape.PointingHandCursor)
             site_btn.setFixedWidth(180)
@@ -255,11 +257,13 @@ class AppDetailsPage(QWidget):
 
         return header
 
-    def _build_section(self, title: str, text: str | None, items: list | None = None) -> QWidget:
+    def _build_section(
+        self, title: str, text: str | None, items: list | None = None
+    ) -> QWidget:
         """
-        Универсальный блок-секция.
-        Если передан text — покажет абзац.
-        Если передан items — покажет маркированный список.
+        Universal section block.
+        If text is given — shows a paragraph.
+        If items are given — shows a bulleted list.
         """
 
         section = QFrame()
@@ -289,19 +293,19 @@ class AppDetailsPage(QWidget):
         return section
 
     def _build_specs(self, data: dict) -> QWidget | None:
-        """Блок с характеристиками: версия, размер, лицензия, категория и т.д."""
+        """Block with specs: version, size, license, category, etc."""
 
         rows = []
         if data.get("version"):
-            rows.append(("Версия", data["version"]))
+            rows.append((t("details.spec.version"), data["version"]))
         if data.get("release_date"):
-            rows.append(("Дата выпуска", data["release_date"]))
+            rows.append((t("details.spec.release_date"), data["release_date"]))
         if data.get("category"):
-            rows.append(("Категория", data["category"]))
+            rows.append((t("details.spec.category"), data["category"]))
         if data.get("size_mb"):
-            rows.append(("Размер", f"{data['size_mb']} МБ"))
+            rows.append((t("details.spec.size"), f"{data['size_mb']} {t('size.mb')}"))
         if data.get("license"):
-            rows.append(("Лицензия", data["license"]))
+            rows.append((t("details.spec.license"), data["license"]))
 
         if not rows:
             return None
@@ -313,7 +317,7 @@ class AppDetailsPage(QWidget):
         layout.setContentsMargins(20, 16, 20, 16)
         layout.setSpacing(10)
 
-        header = QLabel("Характеристики")
+        header = QLabel(t("details.section.specs"))
         header.setObjectName("SectionTitle")
         layout.addWidget(header)
 
@@ -333,7 +337,7 @@ class AppDetailsPage(QWidget):
         return section
 
     def _build_screenshots(self, screenshots: list) -> QWidget:
-        """Блок со скриншотами."""
+        """Block with screenshots."""
 
         section = QFrame()
         section.setObjectName("DetailsSection")
@@ -342,19 +346,19 @@ class AppDetailsPage(QWidget):
         layout.setContentsMargins(20, 16, 20, 16)
         layout.setSpacing(10)
 
-        header = QLabel("Скриншоты")
+        header = QLabel(t("details.section.screenshots"))
         header.setObjectName("SectionTitle")
         layout.addWidget(header)
 
-        # Пробуем два источника: "screenshots" (имена) и "screenshots_urls" (URL)
+        # Try two sources: "screenshots" (names) and "screenshots_urls" (URLs)
         names = self._current_data.get("screenshots", [])
         urls = self._current_data.get("screenshots_urls", [])
 
-        # Сначала — по именам (наши скриншоты)
+        # First — by names (our screenshots)
         for name in names:
             shot_path = find_screenshot(self._current_data, name)
             if shot_path is None:
-                # Fallback: встроенный скриншот
+                # Fallback: built-in screenshot
                 builtin = SCREENSHOTS_DIR / name
                 if builtin.exists():
                     shot_path = builtin
@@ -364,7 +368,7 @@ class AppDetailsPage(QWidget):
 
             self._add_screenshot_to_layout(shot_path, layout)
 
-        # Потом — по внешним URL (индексы)
+        # Then — by external URLs (indices)
         for idx in range(len(urls)):
             shot_path = find_screenshot(self._current_data, idx)
             if shot_path is None:
@@ -375,16 +379,13 @@ class AppDetailsPage(QWidget):
         return section
 
     def _add_screenshot_to_layout(self, shot_path: Path, layout) -> None:
-        """
-        Загружает картинку, масштабирует до ширины 600 и добавляет в layout.
-        Пропускает битые/несуществующие файлы.
-        """
+        """Loads an image, scales to 600px wide, adds it to the layout."""
         if not shot_path.exists():
             return
 
         pixmap = QPixmap(str(shot_path))
         if pixmap.isNull():
-            print(f"[details] Битый скриншот: {shot_path.name}")
+            print(f"[details] Broken screenshot: {shot_path.name}")
             return
 
         scaled = pixmap.scaledToWidth(
@@ -399,16 +400,16 @@ class AppDetailsPage(QWidget):
 
     def _get_download_buttons(self, data: dict) -> list[dict]:
         """
-        Возвращает список кнопок скачивания.
+        Returns a list of download buttons.
 
-        Поддерживает два формата:
-        1. Новый: поле "downloads" — список словарей с label/url/primary
-        2. Старый: поле "download_url" — превращается в одну кнопку
+        Supports two formats:
+        1. New: "downloads" field — list of dicts with label/url/primary
+        2. Old: "download_url" field — converted to a single button
 
-        Возвращает список словарей:
+        Returns a list of dicts:
         [{"label": str, "url": str, "primary": bool}, ...]
         """
-        # Приоритет — новому формату
+        # Priority — new format
         downloads = data.get("downloads", [])
         if isinstance(downloads, list) and downloads:
             result = []
@@ -416,48 +417,50 @@ class AppDetailsPage(QWidget):
                 if not isinstance(item, dict):
                     continue
                 result.append({
-                    "label": item.get("label", "Скачать"),
+                    "label": item.get("label", t("details.download")),
                     "url": item.get("url", ""),
                     "primary": bool(item.get("primary", False)),
-                    "type": item.get("type", "download"),   # ← новое поле
+                    "type": item.get("type", "download"),
                 })
             if result:
                 return result
 
-        # Fallback — старый формат
+        # Fallback — old format
         old_url = data.get("download_url", "")
         if old_url:
             return [{
-                "label": "Скачать",
+                "label": t("details.download"),
                 "url": old_url,
                 "primary": True,
             }]
 
         return []
 
-    def _on_download_clicked(self, url: str, data: dict, btn_type: str = "download") -> None:
+    def _on_download_clicked(
+        self, url: str, data: dict, btn_type: str = "download"
+    ) -> None:
         """
-        Нажатие на одну из кнопок.
+        One of the buttons is clicked.
 
-        btn_type = "download" — скачивать файл (сигнал наружу)
-        btn_type = "link"     — открыть ссылку в браузере
+        btn_type = "download" — download the file (emit signal)
+        btn_type = "link"     — open the link in the browser
         """
         if btn_type == "link":
-            # Открываем ссылку в браузере
-            print(f"[details] Открываем ссылку: {url}")
+            # Open the link in the browser
+            print(f"[details] Opening link: {url}")
             self._open_website(url)
             return
 
-        # По умолчанию — скачивание
-        payload = dict(data)         # копия
-        payload["_clicked_url"] = url  # добавляем URL, который нажали
+        # By default — download
+        payload = dict(data)          # copy
+        payload["_clicked_url"] = url  # add the URL that was clicked
         self.download_requested.emit(payload)
 
     # ------------------------------------------------------------------
-    # Обработчики
+    # Handlers
     # ------------------------------------------------------------------
     def _open_website(self, url: str) -> None:
-        """Открывает сайт в системном браузере."""
+        """Opens the website in the system browser."""
         from PySide6.QtGui import QDesktopServices
         from PySide6.QtCore import QUrl
         QDesktopServices.openUrl(QUrl(url))

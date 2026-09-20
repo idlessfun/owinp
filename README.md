@@ -1,206 +1,206 @@
 # OWINP — Open Windows Programs
 
-> Каталог бесплатных open-source программ для Windows с удобным интерфейсом, встроенным скачиванием и без телеметрии.
+> Catalog of free open-source programs for Windows with a convenient interface, built-in downloading, and no telemetry.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![Latest Release](https://img.shields.io/github/v/release/idlessfun/owinp)](https://github.com/idlessfun/owinp/releases/latest)
 [![Telegram](https://img.shields.io/badge/Telegram-%232CA5E0.svg?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/+l5zeMXjfbXI0YzJi)
 
-## 📥 Скачать
+## 📥 Download
 
-**Готовая версия для Windows** — не требует установки Python:
+**Ready-made version for Windows** — no need to install Python:
 
-- 🖥 **[Установщик](https://github.com/idlessfun/owinp/releases/download/v0.1.0/OWINP-Setup-0.1.0.exe)** — обычная установка в систему (21.7 МБ)
-- 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.1.0/OWINP-Portable-0.1.0.zip)** — распаковать и запустить (29 МБ)
+- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.1.0/OWINP-Setup-0.1.0.exe)** — regular installation into the system (21.7 MB)
+- 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.1.0/OWINP-Portable-0.1.0.zip)** — unpack and run (29 MB)
 
-Обе версии — в разделе [**Releases**](https://github.com/idlessfun/owinp/releases/latest).
+Both versions are in the [**Releases**](https://github.com/idlessfun/owinp/releases/latest) section.
 
-## ✨ Возможности
+## ✨ Features
 
-- 🎨 **Современный интерфейс** — тёмная тема, оформление в стиле F-Droid
-- 📦 **Каталог программ** — карточки с описанием, характеристиками и скриншотами
-- 🔍 **Поиск и фильтры** — мгновенный поиск по названию, описанию и тегам, фильтр по категориям
-- ⬇️ **Встроенное скачивание** — прогресс-бар, скорость, отмена
-- 🚀 **Быстрый запуск** — после скачивания можно сразу открыть папку или запустить установщик
-- 🌐 **Автообновление каталога** — свежие программы без переустановки приложения
-- 🔄 **Автообновление приложения** — уведомление о новых версиях через GitHub Releases
-- 🛡️ **Без телеметрии** — приложение не отправляет никаких данных
-- 🔓 **Open Source** — код открыт под лицензией MIT
-- 📝 **Data-driven** — программы добавляются простым JSON-файлом, без правки кода
+- 🎨 **Modern interface** — dark theme, F-Droid style design
+- 📦 **Program catalog** — cards with description, characteristics, and screenshots
+- 🔍 **Search and filters** — instant search by name, description, and tags, filter by categories
+- ⬇️ **Built-in downloading** — progress bar, speed, cancellation
+- 🚀 **Quick launch** — after downloading, you can immediately open the folder or run the installer
+- 🌐 **Catalog auto-update** — fresh programs without reinstalling the application
+- 🔄 **Application auto-update** — notification about new versions via GitHub Releases
+- 🛡️ **No telemetry** — the application does not send any data
+- 🔓 **Open Source** — code is open under the MIT license
+- 📝 **Data-driven** — programs are added with a simple JSON file, without editing code
 
-## 🚀 Установка
+## 🚀 Installation
 
-### Вариант 1 — Готовая сборка (рекомендуется)
+### Option 1 — Ready-made build (recommended)
 
-1. Перейди в [**Releases**](https://github.com/idlessfun/owinp/releases/latest)
-2. Скачай `OWINP-Setup-X.X.X.exe` (установщик) или `OWINP-Portable-X.X.X.zip` (portable)
-3. Установи / распакуй и запусти `OWINP.exe`
+1. Go to [**Releases**](https://github.com/idlessfun/owinp/releases/latest)
+2. Download `OWINP-Setup-X.X.X.exe` (installer) or `OWINP-Portable-X.X.X.zip` (portable)
+3. Install / unpack and run `OWINP.exe`
 
-**Системные требования:**
-- Windows 10 или 11 (64-bit)
-- ~200 МБ свободного места
+**System requirements:**
+- Windows 10 or 11 (64-bit)
+- ~200 MB of free space
 
-### Вариант 2 — Из исходников
+### Option 2 — From source
 
-**Требования:**
-- Windows 10 или 11 (64-bit)
+**Requirements:**
+- Windows 10 or 11 (64-bit)
 - Python 3.12+
 
 ```bash
-# Клонировать репозиторий
+# Clone the repository
 git clone https://github.com/idlessfun/owinp.git
 cd owinp
 
-# Создать виртуальное окружение
+# Create a virtual environment
 python -m venv .venv
 
-# Активировать (Windows)
+# Activate (Windows)
 .venv\Scripts\activate
 
-# Установить зависимости
+# Install dependencies
 pip install -r requirements.txt
 
-# Запустить
+# Run
 python main.py
 ```
 
-## 🔒 Безопасность
+## 🔒 Security
 
-Приложение проверено на **VirusTotal**:
+The application has been checked on **VirusTotal**:
 
-- **Установщик**: 1/68 (только DeepInstinct — ложное срабатывание ML-сканера)
-- **Portable**: 1/64 (только Elastic — ложное срабатывание ML-сканера)
+- **Installer**: 1/68 (only DeepInstinct — false positive of the ML scanner)
+- **Portable**: 1/64 (only Elastic — false positive of the ML scanner)
 
-**Kaspersky**, **DrWeb**, **Microsoft**, **ESET**, **BitDefender**, **Sophos**, **Symantec**, **Avast** — подтвердили чистоту.
+**Kaspersky**, **DrWeb**, **Microsoft**, **ESET**, **BitDefender**, **Sophos**, **Symantec**, **Avast** — confirmed cleanliness.
 
-### Что делает приложение в сети
+### What the application does on the network
 
-OWINP **не собирает** и **не отправляет** никаких данных о вас. Никакой телеметрии, аналитики, трекинга.
+OWINP **does not collect** and **does not send** any data about you. No telemetry, analytics, tracking.
 
-Приложение делает **только два** типа сетевых запросов, и **оба — только к репозиторию на GitHub**:
+The application makes **only two** types of network requests, and **both — only to the repository on GitHub**:
 
-1. **Проверка обновлений приложения** — раз в час запрашивает последнюю версию через GitHub Releases API.
-2. **Обновление каталога программ** — раз в час скачивает свежие JSON-карточки и картинки с `raw.githubusercontent.com`.
+1. **Application update check** — once an hour requests the latest version via the GitHub Releases API.
+2. **Program catalog update** — once an hour downloads fresh JSON cards and images from `raw.githubusercontent.com`.
 
-Обе проверки:
-- Используют **только HTTPS**.
-- Работают **только** с доменами `api.github.com` и `raw.githubusercontent.com`.
-- **Тихо** пропускаются, если нет интернета — приложение продолжает работать из кэша.
+Both checks:
+- Use **only HTTPS**.
+- Work **only** with the domains `api.github.com` and `raw.githubusercontent.com`.
+- Are **silently** skipped if there is no internet — the application continues to work from the cache.
 
-**Никаких** других запросов приложение не делает.
+The application makes **no** other requests.
 
-## 🗂 Формат JSON-карточки программы
+## 🗂 JSON program card format
 
-Каждая программа в каталоге — это JSON-файл в `app/apps/`. Пример:
+Each program in the catalog is a JSON file in `app/apps/`. Example:
 
 ```json
 {
     "id": "unique-id",
-    "name": "Название программы",
-    "developer": "Разработчик",
-    "description": "Короткое описание для карточки в списке",
-    "long_description": "Подробное описание для страницы программы",
+    "name": "Program name",
+    "developer": "Developer",
+    "description": "Short description for the card in the list",
+    "long_description": "Detailed description for the program page",
     "version": "1.0.0",
     "release_date": "2026-01-01",
-    "category": "Утилиты",
+    "category": "Utilities",
     "size_mb": 5.0,
     "license": "MIT",
     "website": "https://example.com",
     "downloads": [
         {
-            "label": "Скачать",
+            "label": "Download",
             "url": "https://example.com/setup.exe",
             "primary": true
         }
     ],
     "icon": "example.png",
     "requirements": [
-        "Windows 10 и выше"
+        "Windows 10 and above"
     ],
     "features": [
-        "Возможность 1",
-        "Возможность 2"
+        "Feature 1",
+        "Feature 2"
     ],
     "screenshots": [],
     "is_portable": false,
     "is_open_source": true,
-    "tags": ["тег1", "тег2"]
+    "tags": ["tag1", "tag2"]
 }
 ```
 
-**Обязательные поля:** `id`, `name`, `description`, `version`, `category`, `size_mb`, `website`, `icon` и одно из: `downloads` (новый формат) или `download_url` (старый формат).
+**Required fields:** `id`, `name`, `description`, `version`, `category`, `size_mb`, `website`, `icon` and one of: `downloads` (new format) or `download_url` (old format).
 
-**Опциональные:** `developer`, `long_description`, `release_date`, `license`, `requirements`, `features`, `screenshots`, `is_portable`, `is_open_source`, `tags`.
+**Optional:** `developer`, `long_description`, `release_date`, `license`, `requirements`, `features`, `screenshots`, `is_portable`, `is_open_source`, `tags`.
 
-> ### Как добавить программу
-> **К огромному счастью, данный процесс облегчился, и это можно сделать просто через [телеграм-группу поддержки OWINP](https://t.me/+l5zeMXjfbXI0YzJi)!**
+> ### How to add a program
+> **To great happiness, this process has become easier, and you can do it simply through the [OWINP support Telegram group](https://t.me/+l5zeMXjfbXI0YzJi)!**
 >
-> Сначала разберёмся, как свою программу предложить выпустить через группу поддержки OWINP.
-> От вас требуется следующее:
+> First, let's figure out how to propose your program for release through the OWINP support group.
+> The following is required from you:
 >
-> 1. Название программы
-> 2. Описание программы
-> 3. Скриншоты и иконка в формате PNG
-> 4. Ссылка на скачивание
-> 5. Ссылка на сайт
+> 1. Program name
+> 2. Program description
+> 3. Screenshots and icon in PNG format
+> 4. Download link
+> 5. Website link
 >
-> После проверки вы получите короткий ответ на ваше сообщение.
-## 🛠 Технологии
+> After verification, you will receive a short reply to your message.
+## 🛠 Technologies
 
 - [Python 3.12](https://www.python.org/)
-- [PySide6](https://doc.qt.io/qtforpython/) — Qt6 для Python
-- [Nuitka](https://nuitka.net/) — компиляция в `.exe`
-- [Inno Setup](https://jrsoftware.org/isinfo.php) — создание установщика
+- [PySide6](https://doc.qt.io/qtforpython/) — Qt6 for Python
+- [Nuitka](https://nuitka.net/) — compilation into `.exe`
+- [Inno Setup](https://jrsoftware.org/isinfo.php) — creating the installer
 
-## 📋 Планы
+## 📋 Plans
 
-### Уже готово
+### Already done
 
-- [x] Базовый интерфейс с тёмной темой
-- [x] Каталог программ из JSON
-- [x] Страница программы (как в F-Droid)
-- [x] Поиск и фильтр по категориям
-- [x] Встроенное скачивание с прогресс-баром
-- [x] Открытие папки / запуск установщика после скачивания
-- [x] Автообновление кода через GitHub Releases
-- [x] Автообновление каталога программ
-- [x] Кэширование иконок и скриншотов
-- [x] Троттлинг проверок (не чаще 1 раза в час)
-- [x] Сборка `.exe` и установщик (Portable + Setup)
-- [x] Отдельная админ-программа для управления каталогом (`OWINP Admin`)
-- [x] Расширенная кастомизация JSON-карточек
-- [x] Раздел «Настройки» в приложении
-- [x] Исправление багов в приложении
-### В разработке
+- [x] Basic interface with dark theme
+- [x] Program catalog from JSON
+- [x] Program page (like in F-Droid)
+- [x] Search and filter by categories
+- [x] Built-in downloading with progress bar
+- [x] Opening folder / running installer after downloading
+- [x] Code auto-update via GitHub Releases
+- [x] Program catalog auto-update
+- [x] Caching of icons and screenshots
+- [x] Throttling of checks (no more than once an hour)
+- [x] Building `.exe` and installer (Portable + Setup)
+- [x] Separate admin program for managing the catalog (`OWINP Admin`)
+- [x] Extended customization of JSON cards
+- [x] "Settings" section in the application
+- [x] Fixing bugs in the application
+### In development
 
-- [ ] Английская локализация интерфейса и кода
-- [ ] Подготовка к переводу приложения на разные языки
-- [ ] Создание сообществ в разных соц-сетях
-- [ ] Собирание команды для будущего процветания проекта
-- [ ] Приготовить тортик:)
+- [ ] English localization of the interface and code
+- [ ] Preparation for translating the application into different languages
+- [ ] Creating communities in different social networks
+- [ ] Gathering a team for the future prosperity of the project
+- [ ] Prepare a cake:)
 
-## 🤝 Вклад
+## 🤝 Contribution
 
-Pull requests приветствуются! Для крупных изменений сначала открой [issue](https://github.com/idlessfun/owinp/issues), чтобы обсудить, что и как.
+Pull requests are welcome! For major changes, first open an [issue](https://github.com/idlessfun/owinp/issues) to discuss what and how.
 
-**Как помочь проекту:**
-- 🐛 Сообщить об ошибке — открой [issue](https://github.com/idlessfun/owinp/issues)
-- 📦 Добавить программу в каталог — следуй инструкции «Как добавить программу» выше
-- 💡 Предложить идею — открой issue с описанием
-- ⭐ Поставить звезду на GitHub — помогает проекту стать заметнее
+**How to help the project:**
+- 🐛 Report a bug — open an [issue](https://github.com/idlessfun/owinp/issues)
+- 📦 Add a program to the catalog — follow the "How to add a program" instruction above
+- 💡 Suggest an idea — open an issue with a description
+- ⭐ Star the project on GitHub — helps the project become more visible
 
-**Хотите по легче? Вариант есть**
-- 🐛 Напишите просто в [телеграмм группу поддержки проекта OWINP](https://t.me/+l5zeMXjfbXI0YzJi),
-и я обязательно отвечу.
-**Но, вопросы не по теме будут автоматически через время удалятся! По этому имейте ввиду.**
-## 📜 Лицензия
+**Want an easier way? There is an option**
+- 🐛 Just write to the [OWINP project support Telegram group](https://t.me/+l5zeMXjfbXI0YzJi),
+and I will definitely reply.
+**But, off-topic questions will be automatically deleted after a while! So keep that in mind.**
+## 📜 License
 
-[MIT](LICENSE) — свободно используйте, изменяйте и распространяйте.
+[MIT](LICENSE) — freely use, modify, and distribute.
 
-## 🔗 Ссылки
+## 🔗 Links
 
-- Репозиторий: https://github.com/idlessfun/owinp
-- Последний релиз: https://github.com/idlessfun/owinp/releases/latest
-- Сообщить об ошибке: https://github.com/idlessfun/owinp/issues
-- Telegram группа поддержки OWINP: https://t.me/+l5zeMXjfbXI0YzJi
+- Repository: https://github.com/idlessfun/owinp
+- Latest release: https://github.com/idlessfun/owinp/releases/latest
+- Report a bug: https://github.com/idlessfun/owinp/issues
+- OWINP support Telegram group: https://t.me/+l5zeMXjfbXI0YzJi

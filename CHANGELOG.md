@@ -1,64 +1,64 @@
 # Changelog
 
-Все значимые изменения проекта OWINP.
+All significant changes to the OWINP project.
 
-Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
-версии следуют [Semantic Versioning](https://semver.org/lang/ru/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
+and versions follow [Semantic Versioning](https://semver.org/lang/ru/).
 
 ## [Unreleased]
 
-### Планируется
-- Кнопки разных типов (скачать / открыть ссылку)
-- Цветовая палитра интерфейса
-- Раздел «Настройки» в приложении
-- Токен GitHub в настройках
-- Английская локализация интерфейса и кода
+### Planned
+- Buttons of different types (download / open link)
+- Interface color palette
+- "Settings" section in the application
+- GitHub token in settings
+- English localization of the interface and code
 
 ## [0.1.1] — 2026-09-19
 
-### Исправлено
-- Краш при закрытии диалога загрузки (`QThread` теперь корректно завершается)
-- Иконка программы теперь отображается в диалоге загрузки (берётся из кэша)
-- Автоматическая очистка устаревших файлов из кэша (удалённые программы исчезают из каталога)
-- Двойной `emit` при обновлении каталога (список перестраивался дважды)
+### Fixed
+- Crash when closing the download dialog (`QThread` now terminates correctly)
+- The program icon is now displayed in the download dialog (taken from the cache)
+- Automatic cleanup of outdated files from the cache (deleted programs disappear from the catalog)
+- Double `emit` when updating the catalog (the list was rebuilt twice)
 
-### Добавлено
-- Кнопка «🧹 Очистить кэш» на главной странице
+### Added
+- "🧹 Clear cache" button on the main page
 
 ## [0.1.0] — 2026-09-16
 
-### Добавлено
-- Базовый интерфейс с тёмной темой
-- Каталог программ из JSON
-- Страница программы (как в F-Droid)
-- Поиск и фильтр по категориям
-- Встроенное скачивание с прогресс-баром, скоростью и отменой
-- Кнопки «Открыть папку» и «Запустить» после скачивания
-- Автообновление кода через GitHub Releases
-- Автообновление каталога программ из GitHub
-- Автоматическое скачивание и кэширование иконок и скриншотов
-- Троттлинг проверок (не чаще 1 раза в час)
-- Кнопка «Проверить обновления» на главной странице
-- Кэш для офлайн-работы
-- Массив `downloads` в JSON — поддержка нескольких кнопок (зеркала, portable)
-- Расширенные настройки
-### Собрано
-- **`.exe`** через **Nuitka** — больше не требует установки Python
-- **Установщик** через **Inno Setup** с русским и английским языками
-- **Portable** версия (`.zip` архив) — работает без установки
-- **Иконка** приложения во всех местах (`.exe`, ярлыки, панель задач)
-- **Метаданные** файла: издатель OWINP, версия 0.1.0
-- **Запуск без консоли** — приложение выглядит как обычная Windows-программа
+### Added
+- Basic interface with dark theme
+- Program catalog from JSON
+- Program page (like in F-Droid)
+- Search and filter by categories
+- Built-in downloading with progress bar, speed, and cancellation
+- "Open folder" and "Run" buttons after downloading
+- Code auto-update via GitHub Releases
+- Program catalog auto-update from GitHub
+- Automatic downloading and caching of icons and screenshots
+- Throttling of checks (no more than once an hour)
+- "Check for updates" button on the main page
+- Cache for offline work
+- `downloads` array in JSON — support for multiple buttons (mirrors, portable)
+- Extended settings
+### Built
+- **`.exe`** via **Nuitka** — no longer requires installing Python
+- **Installer** via **Inno Setup** with Russian and English languages
+- **Portable** version (`.zip` archive) — works without installation
+- **Application icon** in all places (`.exe`, shortcuts, taskbar)
+- **File metadata**: publisher OWINP, version 0.1.0
+- **Launch without console** — the application looks like a regular Windows program
 
-### Безопасность
-- Только HTTPS для всех сетевых запросов
-- Whitelist доменов для скачивания каталога
-- Санитизация имён файлов (защита от path traversal)
-- Валидация JSON перед использованием
-- Проверено на VirusTotal: 1/68 (ложное срабатывание ML-сканера)
+### Security
+- Only HTTPS for all network requests
+- Domain whitelist for downloading the catalog
+- Sanitization of file names (protection against path traversal)
+- JSON validation before use
+- Checked on VirusTotal: 1/68 (false positive of the ML scanner)
 
-### Документация
+### Documentation
 - LICENSE (MIT)
-- README.md с описанием и инструкциями
+- README.md with description and instructions
 - CHANGELOG.md
 - SECURITY.md

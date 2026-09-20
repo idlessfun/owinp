@@ -1,5 +1,5 @@
 """
-Главное окно приложения OWINP.
+The main window of the OWINP application.
 """
 
 from pathlib import Path
@@ -37,24 +37,41 @@ from app.core.user_settings import (
     FONT_SIZES,
     DEFAULTS,
 )
+
+from app.core.translator import (
+    t,
+    set_language,
+    detect_system_language,
+    load_available_languages,
+)
+
 from app.ui.apps_page import AppsPage
 from app.ui.update_dialog import UpdateDialog
 
 
 class MainWindow(QMainWindow):
-    """Главное окно приложения."""
+    """The main application window."""
 
     def __init__(self) -> None:
         super().__init__()
 
-        # Обновления / каталог
+        # Updates / Catalog
         self._update_info: dict | None = None
         self._checker: UpdateChecker | None = None
         self._catalog_loader: CatalogLoader | None = None
         self._manual_check = False
 
-        # Пользовательские настройки
+        # User settings (theme, font, etc.)
         self.user_settings = load_user_settings()
+
+        # Set the UI language (from settings, or auto-detect if not set)
+        lang = self.user_settings.get("language", "")
+        if not lang:
+            lang = detect_system_language()
+            self.user_settings["language"] = lang
+            save_user_settings(self.user_settings)
+        set_language(lang)
+        print(f"[main] UI language: {lang}")
 
         self.setWindowTitle(f"OWINP — Open Windows Programs v{__version__}")
         self.resize(1100, 700)
@@ -63,19 +80,19 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._apply_styles()
 
-        # Запускаем проверки только если включены в настройках
+        # Run checks only if they are enabled in the settings
         if self.user_settings.get("check_updates_on_start", True):
             QTimer.singleShot(2000, self._check_for_updates)
         else:
-            print("[main] Проверка обновлений отключена в настройках")
+            print("[main] Check for updates is disabled in the settings")
 
         if self.user_settings.get("refresh_catalog_on_start", True):
             QTimer.singleShot(3000, self._refresh_catalog)
         else:
-            print("[main] Обновление каталога отключено в настройках")
+            print("[main] Catalog updates are disabled in the settings")
 
     # ------------------------------------------------------------------
-    # Построение интерфейса
+    # Building the Interface
     # ------------------------------------------------------------------
     def _build_ui(self) -> None:
         central = QWidget()
@@ -113,13 +130,13 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(20, 0, 12, 0)
         layout.setSpacing(12)
 
-        text = QLabel("🎉 Доступна новая версия OWINP")
+        text = QLabel(t("banner.new_version"))
         text.setObjectName("BannerText")
         layout.addWidget(text)
 
         layout.addStretch(1)
 
-        what_new_btn = QPushButton("Что нового")
+        what_new_btn = QPushButton(t("banner.whats_new"))
         what_new_btn.setObjectName("BannerButton")
         what_new_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         what_new_btn.clicked.connect(self._show_update_dialog)
@@ -153,7 +170,11 @@ class MainWindow(QMainWindow):
         self.nav_list = QListWidget()
         self.nav_list.setObjectName("NavList")
 
-        sections = ["Главная", "Программы", "Настройки"]
+        sections = [
+            t("nav.home"),
+            t("nav.programs"),
+            t("nav.settings"),
+        ]
         for name in sections:
             QListWidgetItem(name, self.nav_list)
 
@@ -166,19 +187,16 @@ class MainWindow(QMainWindow):
     def _build_content_area(self) -> QWidget:
         stack = QStackedWidget()
 
-        # Главная
+        # Home
         home = QWidget()
         home_layout = QVBoxLayout(home)
         home_layout.setContentsMargins(40, 40, 40, 40)
         home_layout.setSpacing(16)
 
-        title = QLabel("Добро пожаловать в OWINP")
+        title = QLabel(t("home.title"))
         title.setObjectName("PageTitle")
 
-        subtitle = QLabel(
-            "Каталог open-source программ для Windows.\n"
-            "Версия: v" + __version__
-        )
+        subtitle = QLabel(t("home.subtitle", version=__version__))
         subtitle.setObjectName("PageSubtitle")
         subtitle.setWordWrap(True)
 
@@ -186,14 +204,14 @@ class MainWindow(QMainWindow):
         home_layout.addWidget(subtitle)
         home_layout.addSpacing(20)
 
-        check_btn = QPushButton("🔄 Проверить обновления")
+        check_btn = QPushButton(t("home.check_updates"))
         check_btn.setObjectName("PrimaryButton")
         check_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         check_btn.setFixedWidth(240)
         check_btn.clicked.connect(self._manual_check_for_updates)
         home_layout.addWidget(check_btn)
 
-        clear_cache_btn = QPushButton("🧹 Очистить кэш")
+        clear_cache_btn = QPushButton(t("home.clear_cache"))
         clear_cache_btn.setObjectName("SecondaryButton")
         clear_cache_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         clear_cache_btn.setFixedWidth(240)
@@ -203,36 +221,33 @@ class MainWindow(QMainWindow):
         home_layout.addStretch(1)
         stack.addWidget(home)
 
-        # Программы
+        # Programs
         apps_page = AppsPage()
         stack.addWidget(apps_page)
 
-        # Настройки
+        # Settings
         settings_page = self._build_settings_page()
         stack.addWidget(settings_page)
 
         return stack
 
     def _build_settings_page(self) -> QWidget:
-        """Страница «Настройки» — тема, шрифт, поведение."""
+        """“Settings” page — theme, font, behavior."""
         page = QWidget()
         outer = QVBoxLayout(page)
         outer.setContentsMargins(40, 30, 40, 30)
         outer.setSpacing(16)
 
-        title = QLabel("Настройки")
+        title = QLabel(t("settings.title"))
         title.setObjectName("PageTitle")
         outer.addWidget(title)
 
-        subtitle = QLabel(
-            "Настрой внешний вид и поведение приложения. Изменения "
-            "применяются сразу и сохраняются между запусками."
-        )
+        subtitle = QLabel(t("settings.subtitle"))
         subtitle.setObjectName("PageSubtitle")
         subtitle.setWordWrap(True)
         outer.addWidget(subtitle)
 
-        # Прокручиваемая область
+        # Scrollable Area
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setObjectName("FormScroll")
@@ -243,25 +258,25 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 12, 0)
         layout.setSpacing(16)
 
-        # --- Секция «Интерфейс» ---
+        # --- “Interface” Section ---
         layout.addWidget(self._build_settings_interface())
 
-        # --- Секция «Сеть и обновления» ---
+        # --- “Network and Updates” Section ---
         layout.addWidget(self._build_settings_network())
 
-        # --- Секция «Скачивание» ---
+        # --- “Downloads” Section ---
         layout.addWidget(self._build_settings_download())
 
-        # --- Секция «Страница программы» ---
+        # --- “Program Page” Section ---
         layout.addWidget(self._build_settings_app_page())
 
         layout.addStretch(1)
         scroll.setWidget(container)
         outer.addWidget(scroll, stretch=1)
 
-        # --- Кнопка сброса ---
+        # --- Reset Button ---
         buttons = QHBoxLayout()
-        reset_btn = QPushButton("🔄  Сбросить все настройки")
+        reset_btn = QPushButton(t("settings.reset_all"))
         reset_btn.setObjectName("SecondaryButton")
         reset_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         reset_btn.setFixedWidth(280)
@@ -270,8 +285,8 @@ class MainWindow(QMainWindow):
         buttons.addStretch(1)
         outer.addLayout(buttons)
 
-        # --- Путь к файлу ---
-        path_label = QLabel(f"Файл настроек: {get_user_settings_path()}")
+        # --- File Path ---
+        path_label = QLabel(t("settings.config_file", path=get_user_settings_path()))
         path_label.setObjectName("SettingsPath")
         path_label.setWordWrap(True)
         outer.addWidget(path_label)
@@ -279,14 +294,14 @@ class MainWindow(QMainWindow):
         return page
 
     def _build_settings_interface(self) -> QGroupBox:
-        """Секция «Интерфейс»."""
-        group = QGroupBox("Интерфейс")
+        """The ‘Interface’ section."""
+        group = QGroupBox(t("settings.section.interface"))
         group.setObjectName("SettingsGroup")
         form = QFormLayout(group)
         form.setContentsMargins(16, 20, 16, 16)
         form.setSpacing(12)
 
-        # Тема
+        # Themes
         self.theme_combo = QComboBox()
         self.theme_combo.setObjectName("SettingsInput")
         self.theme_combo.setFixedWidth(320)
@@ -297,9 +312,9 @@ class MainWindow(QMainWindow):
         if idx >= 0:
             self.theme_combo.setCurrentIndex(idx)
         self.theme_combo.currentIndexChanged.connect(self._on_theme_changed)
-        form.addRow("Тема:", self.theme_combo)
+        form.addRow(t("settings.theme"), self.theme_combo)
 
-        # Размер шрифта
+        # Font Size
         self.font_size_combo = QComboBox()
         self.font_size_combo.setObjectName("SettingsInput")
         self.font_size_combo.setFixedWidth(320)
@@ -310,18 +325,32 @@ class MainWindow(QMainWindow):
         if idx >= 0:
             self.font_size_combo.setCurrentIndex(idx)
         self.font_size_combo.currentIndexChanged.connect(self._on_font_size_changed)
-        form.addRow("Размер шрифта:", self.font_size_combo)
+        form.addRow(t("settings.font_size"), self.font_size_combo)
 
-        # Компактный режим
-        self.compact_check = QCheckBox("Компактный режим (карточки меньше)")
+        # Language
+        self.language_combo = QComboBox()
+        self.language_combo.setObjectName("SettingsInput")
+        self.language_combo.setFixedWidth(320)
+        available_langs = load_available_languages()
+        for lang in available_langs:
+            self.language_combo.addItem(lang["name"], lang["code"])
+        current_lang = self.user_settings.get("language", "en")
+        idx = self.language_combo.findData(current_lang)
+        if idx >= 0:
+            self.language_combo.setCurrentIndex(idx)
+        self.language_combo.currentIndexChanged.connect(self._on_language_changed)
+        form.addRow(t("settings.language"), self.language_combo)
+
+        # Compact mode
+        self.compact_check = QCheckBox(t("settings.compact_mode"))
         self.compact_check.setChecked(self.user_settings.get("compact_mode", False))
         self.compact_check.toggled.connect(
             lambda v: self._on_setting_toggled("compact_mode", v)
         )
         form.addRow("", self.compact_check)
 
-        # Анимации (заглушка на будущее)
-        self.animations_check = QCheckBox("Анимации интерфейса")
+        # Animations (placeholder for future use)
+        self.animations_check = QCheckBox(t("settings.animations"))
         self.animations_check.setChecked(self.user_settings.get("animations_enabled", True))
         self.animations_check.toggled.connect(
             lambda v: self._on_setting_toggled("animations_enabled", v)
@@ -331,15 +360,15 @@ class MainWindow(QMainWindow):
         return group
 
     def _build_settings_network(self) -> QGroupBox:
-        """Секция «Сеть и обновления»."""
-        group = QGroupBox("Сеть и обновления")
+        """«Network and Updates» section."""
+        group = QGroupBox(t("settings.section.network"))
         group.setObjectName("SettingsGroup")
         form = QFormLayout(group)
         form.setContentsMargins(16, 20, 16, 16)
         form.setSpacing(12)
 
-        # Автопроверка обновлений
-        self.check_updates_check = QCheckBox("Проверять обновления при запуске")
+        # Check for Updates Automatically
+        self.check_updates_check = QCheckBox(t("settings.check_updates_on_start"))
         self.check_updates_check.setChecked(
             self.user_settings.get("check_updates_on_start", True)
         )
@@ -348,8 +377,8 @@ class MainWindow(QMainWindow):
         )
         form.addRow("", self.check_updates_check)
 
-        # Автообновление каталога
-        self.refresh_catalog_check = QCheckBox("Обновлять каталог при запуске")
+        # Automatic Catalog Update
+        self.refresh_catalog_check = QCheckBox(t("settings.refresh_catalog_on_start"))
         self.refresh_catalog_check.setChecked(
             self.user_settings.get("refresh_catalog_on_start", True)
         )
@@ -358,8 +387,8 @@ class MainWindow(QMainWindow):
         )
         form.addRow("", self.refresh_catalog_check)
 
-        # Показывать баннер
-        self.show_banner_check = QCheckBox("Показывать баннер «Доступно обновление»")
+        # Show banner
+        self.show_banner_check = QCheckBox(t("settings.show_update_banner"))
         self.show_banner_check.setChecked(
             self.user_settings.get("show_update_banner", True)
         )
@@ -371,16 +400,14 @@ class MainWindow(QMainWindow):
         return group
 
     def _build_settings_download(self) -> QGroupBox:
-        """Секция «Скачивание»."""
-        group = QGroupBox("Скачивание")
+        """“Downloads» section»."""
+        group = QGroupBox(t("settings.section.download"))
         group.setObjectName("SettingsGroup")
         form = QFormLayout(group)
         form.setContentsMargins(16, 20, 16, 16)
         form.setSpacing(12)
 
-        self.auto_run_check = QCheckBox(
-            "Запускать установщик после скачивания (без вопроса)"
-        )
+        self.auto_run_check = QCheckBox(t("settings.auto_run"))
         self.auto_run_check.setChecked(
             self.user_settings.get("auto_run_after_download", False)
         )
@@ -392,14 +419,14 @@ class MainWindow(QMainWindow):
         return group
 
     def _build_settings_app_page(self) -> QGroupBox:
-        """Секция «Страница программы»."""
-        group = QGroupBox("Страница программы")
+        """«Program Page» section."""
+        group = QGroupBox(t("settings.section.program_page"))
         group.setObjectName("SettingsGroup")
         form = QFormLayout(group)
         form.setContentsMargins(16, 20, 16, 16)
         form.setSpacing(12)
 
-        self.show_screenshots_check = QCheckBox("Показывать скриншоты")
+        self.show_screenshots_check = QCheckBox(t("settings.show_screenshots"))
         self.show_screenshots_check.setChecked(
             self.user_settings.get("show_screenshots", True)
         )
@@ -409,83 +436,123 @@ class MainWindow(QMainWindow):
         form.addRow("", self.show_screenshots_check)
 
         return group
+
     # ------------------------------------------------------------------
-    # Обработчики темы
+    # Settings Handlers
     # ------------------------------------------------------------------
     def _on_theme_changed(self) -> None:
-        """Применяет выбранную тему."""
+        """Applies the selected theme."""
         theme_id = self.theme_combo.currentData()
         if not theme_id:
             return
         self.user_settings["theme"] = theme_id
-        print(f"[main] Новая тема: {theme_id}")
+        print(f"[main] New theme: {theme_id}")
         save_user_settings(self.user_settings)
         self._apply_styles()
 
     def _on_font_size_changed(self) -> None:
-        """Применяет выбранный размер шрифта."""
+        """Applies the selected font size."""
         size = self.font_size_combo.currentData()
         if not size:
             return
         self.user_settings["font_size"] = size
-        print(f"[main] Новый размер шрифта: {size}")
+        print(f"[main] New font size: {size}")
         save_user_settings(self.user_settings)
         self._apply_styles()
 
+    def _on_language_changed(self) -> None:
+        """Asks to restart the app to apply the new language."""
+        lang_code = self.language_combo.currentData()
+        if not lang_code:
+            return
+        if lang_code == self.user_settings.get("language", "en"):
+            return
+
+        self.user_settings["language"] = lang_code
+        save_user_settings(self.user_settings)
+        print(f"[main] New language: {lang_code}")
+
+        answer = QMessageBox.question(
+            self,
+            t("dialog.restart.title"),
+            t("dialog.restart.text"),
+        )
+        if answer == QMessageBox.StandardButton.Yes:
+            self._restart_app()
+
+    def _restart_app(self) -> None:
+        """Restarts the application (using os.execv)."""
+        import sys
+        import os
+        print("[main] Restarting the application...")
+        try:
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+        except Exception as e:
+            print(f"[main] Failed to restart: {e}")
+            QMessageBox.warning(
+                self,
+                t("dialog.restart.error_title"),
+                t("dialog.restart.error_text", error=str(e)),
+            )
+
     def _on_setting_toggled(self, key: str, value: bool) -> None:
-        """Обработчик переключения чекбокса."""
+        """Checkbox toggle handler."""
         self.user_settings[key] = value
         print(f"[main] {key} = {value}")
         save_user_settings(self.user_settings)
 
-        # Если изменили что-то, влияющее на запуск — перезапуск нужен позже
-        # Если изменили что-то, влияющее на UI — применяем сразу
-        if key in ("compact_mode",):
-            # В будущем можно перестраивать карточки
-            pass
-
+        # If you've made a change that affects the UI, apply it immediately
         if key == "show_update_banner" and not value:
-            # Скрыть баннер, если он был виден
             self.update_banner.setVisible(False)
 
+        if key == "compact_mode":
+            self._apply_styles()
+
     def _reset_all_settings(self) -> None:
-        """Сбрасывает все настройки к дефолтным."""
+        """Resets all settings to their defaults."""
         answer = QMessageBox.question(
             self,
-            "Сбросить настройки?",
-            "Вернуть все настройки к стандартным значениям?",
+            t("dialog.reset_settings.title"),
+            t("dialog.reset_settings.text"),
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
 
-        # Сбрасываем в памяти
+        # Clear the memory
         self.user_settings = dict(DEFAULTS)
         save_user_settings(self.user_settings)
 
-        # Обновляем UI контролов
+        # Updating UI Controls
         self._sync_settings_ui()
 
-        # Применяем стили
+        # Applying Styles
         self._apply_styles()
-        print("[main] Все настройки сброшены к дефолтным")
+        print("[main] All settings have been reset to their defaults")
 
     def _sync_settings_ui(self) -> None:
-        """Обновляет значения UI-контролов из self.user_settings."""
-        # Тема
+        """Updates the values of UI controls from self.user_settings."""
+        # Theme
         idx = self.theme_combo.findData(self.user_settings.get("theme", DEFAULT_THEME))
         if idx >= 0:
             self.theme_combo.blockSignals(True)
             self.theme_combo.setCurrentIndex(idx)
             self.theme_combo.blockSignals(False)
 
-        # Размер шрифта
+        # Font Size
         idx = self.font_size_combo.findData(self.user_settings.get("font_size", 14))
         if idx >= 0:
             self.font_size_combo.blockSignals(True)
             self.font_size_combo.setCurrentIndex(idx)
             self.font_size_combo.blockSignals(False)
 
-        # Чекбоксы
+        # Language
+        idx = self.language_combo.findData(self.user_settings.get("language", "en"))
+        if idx >= 0:
+            self.language_combo.blockSignals(True)
+            self.language_combo.setCurrentIndex(idx)
+            self.language_combo.blockSignals(False)
+
+        # Checkboxes
         for key, checkbox in [
             ("compact_mode", self.compact_check),
             ("animations_enabled", self.animations_check),
@@ -499,59 +566,15 @@ class MainWindow(QMainWindow):
             checkbox.setChecked(self.user_settings.get(key, False))
             checkbox.blockSignals(False)
 
-    def _on_theme_changed(self) -> None:
-        """Применяет выбранную тему."""
-        theme_id = self.theme_combo.currentData()
-        if not theme_id:
-            return
-
-        self.user_settings["theme"] = theme_id
-        print(f"[main] Новая тема: {theme_id}")
-        save_user_settings(self.user_settings)
-        self._apply_styles()
-
-    def _reset_theme(self) -> None:
-        """Сбрасывает тему к стандартной."""
-        answer = QMessageBox.question(
-            self,
-            "Сбросить тему?",
-            "Вернуть стандартную тему OWINP (тёмно-синюю)?",
-        )
-        if answer != QMessageBox.StandardButton.Yes:
-            return
-
-        self.user_settings["theme"] = DEFAULT_THEME
-        save_user_settings(self.user_settings)
-
-        idx = self.theme_combo.findData(DEFAULT_THEME)
-        if idx >= 0:
-            self.theme_combo.setCurrentIndex(idx)
-
-        self._apply_styles()
-        print("[main] Тема сброшена к стандартной")
-
-        def _on_setting_toggled(self, key: str, value: bool) -> None:
-            """Обработчик переключения чекбокса."""
-            self.user_settings[key] = value
-            print(f"[main] {key} = {value}")
-            save_user_settings(self.user_settings)
-
-            # Если изменили что-то, влияющее на UI — применяем сразу
-            if key == "show_update_banner" and not value:
-                self.update_banner.setVisible(False)
-
-            if key == "compact_mode":
-                self._apply_styles()
-
     # ------------------------------------------------------------------
-    # Обработчики навигации
+    # Navigation Handlers
     # ------------------------------------------------------------------
     def _on_nav_changed(self, index: int) -> None:
         if 0 <= index < self.content_area.count():
             self.content_area.setCurrentIndex(index)
 
     # ------------------------------------------------------------------
-    # Обновления
+    # Updates
     # ------------------------------------------------------------------
     def _check_for_updates(self) -> None:
         self._manual_check = False
@@ -562,7 +585,7 @@ class MainWindow(QMainWindow):
         self._checker.start()
 
     def _manual_check_for_updates(self) -> None:
-        print("[main] Ручная проверка обновлений")
+        print("[main] Manually Check for Updates")
         self._manual_check = True
         self._checker = UpdateChecker(force=True)
         self._checker.update_available.connect(self._on_update_available)
@@ -571,39 +594,37 @@ class MainWindow(QMainWindow):
         self._checker.start()
 
     def _on_update_available(self, info: dict) -> None:
-        """Есть обновление — показываем баннер (если включено в настройках)."""
+        """If there's an update, display a banner (if enabled in the settings)."""
         self._update_info = info
         show_banner = self.user_settings.get("show_update_banner", True)
         if show_banner:
             self.update_banner.setVisible(True)
-            print(f"[main] Показан баннер обновления: v{info.get('version')}")
+            print(f"[main] An update banner is displayed: v{info.get('version')}")
         else:
-            print(f"[main] Баннер отключён, но обновление есть: v{info.get('version')}")
+            print(f"[main] The banner is disabled, but there is an update: v{info.get('version')}")
 
         if self._manual_check:
             self._manual_check = False
             self._show_update_dialog()
 
     def _on_no_update(self) -> None:
-        print("[main] Обновлений нет")
+        print("[main] No updates")
         if self._manual_check:
             self._manual_check = False
             QMessageBox.information(
                 self,
-                "Обновления",
-                f"У вас последняя версия OWINP ({__version__}).",
+                t("dialog.updates.title"),
+                t("dialog.updates.latest", version=__version__),
             )
 
     def _on_check_failed(self, error: str) -> None:
-        print(f"[main] Не удалось проверить обновления: {error}")
+        print(f"[main] Failed to check for updates: {error}")
         if self._manual_check:
             self._manual_check = False
             QMessageBox.warning(
                 self,
-                "Ошибка проверки",
-                f"Не удалось проверить обновления.\n\n"
-                f"Проверьте подключение к интернету.\n\n"
-                f"Ошибка: {error}",
+                t("dialog.updates.error_title"),
+                t("dialog.updates.error_text", error=error),
             )
 
     def _show_update_dialog(self) -> None:
@@ -613,7 +634,7 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
     # ------------------------------------------------------------------
-    # Каталог
+    # Catalog
     # ------------------------------------------------------------------
     def _refresh_catalog(self, force: bool = False) -> None:
         self._catalog_loader = CatalogLoader(force=force)
@@ -623,27 +644,23 @@ class MainWindow(QMainWindow):
 
     def _on_catalog_updated(self, count: int) -> None:
         if count > 0:
-            print(f"[main] Каталог обновлён: {count} файлов")
+            print(f"[main] Catalog Updated: {count} files")
         else:
-            print("[main] Каталог без изменений")
+            print("[main] Catalog remains unchanged")
 
     def _on_catalog_failed(self, error: str) -> None:
-        print(f"[main] Каталог не обновлён: {error}")
+        print(f"[main] The catalog has not been updated: {error}")
 
     # ------------------------------------------------------------------
-    # Кэш
+    # Cache
     # ------------------------------------------------------------------
     def _clear_cache_clicked(self) -> None:
         from app.core.cache_manager import clear_cache, clear_assets_cache
 
         answer = QMessageBox.question(
             self,
-            "Очистить кэш?",
-            "Будут удалены:\n"
-            "• скачанные JSON-карточки программ\n"
-            "• иконки и скриншоты\n\n"
-            "При следующем запуске каталог скачается заново.\n\n"
-            "Продолжить?",
+            t("dialog.cache.title"),
+            t("dialog.cache.text"),
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
@@ -654,24 +671,22 @@ class MainWindow(QMainWindow):
         if ok_json and ok_assets:
             QMessageBox.information(
                 self,
-                "Кэш очищен ✅",
-                "Кэш успешно очищен.\n\n"
-                "При следующем запуске OWINP загрузит свежий каталог.",
+                t("dialog.cache.ok_title"),
+                t("dialog.cache.ok_text"),
             )
-            print("[main] Кэш очищен пользователем")
+            print("[main] The cache was cleared by the user")
         else:
             QMessageBox.warning(
                 self,
-                "Ошибка",
-                "Не удалось полностью очистить кэш.\n"
-                "Проверь консоль на ошибки.",
+                t("dialog.cache.error_title"),
+                t("dialog.cache.error_text"),
             )
 
     # ------------------------------------------------------------------
-    # Стили (с подстановкой цветов темы)
+    # Styles (with theme colors applied)
     # ------------------------------------------------------------------
     def _apply_styles(self) -> None:
-        # Получаем цвета темы
+        # Retrieving the theme colors
         theme_id = self.user_settings.get("theme", DEFAULT_THEME)
         theme = get_theme(theme_id)
 
@@ -681,7 +696,7 @@ class MainWindow(QMainWindow):
         card_bg = theme["card"]
         border = theme["border"]
 
-        # Подбираем цвет текста: для светлой темы — тёмный, для тёмных — светлый
+        # Choosing a text color: dark for light themes, light for dark themes
         is_light = theme_id == "light"
         text_primary = "#1a1a1a" if is_light else "#ffffff"
         text_secondary = "#555555" if is_light else "#9a9a9a"
@@ -690,11 +705,11 @@ class MainWindow(QMainWindow):
         text_dim = "#444444" if is_light else "#b8b8b8"
         text_soft = "#3a3a3a" if is_light else "#c8c8c8"
 
-        # Размер шрифта и компактный режим
+        # Font Size and Compact Mode
         font_size = self.user_settings.get("font_size", 14)
         compact = self.user_settings.get("compact_mode", False)
 
-        # Размеры карточек и отступов: обычные или компактные
+        # Card Sizes and Indents: Standard or Compact
         if compact:
             card_padding = "8px 12px"
             card_spacing = "6px"
@@ -1055,7 +1070,7 @@ class MainWindow(QMainWindow):
             }
         """
 
-        # Подставляем цвета темы
+        # Set the theme colors
         replacements = {
             "__ACCENT__": accent,
             "__ACCENT_SOFT__": self._mix(accent, background, 0.75),
@@ -1079,8 +1094,8 @@ class MainWindow(QMainWindow):
     @staticmethod
     def _mix(color1: str, color2: str, alpha: float) -> str:
         """
-        Смешивает два hex-цвета: alpha — доля color1.
-        Например, _mix("#ffffff", "#000000", 0.5) → "#808080".
+        Mixes two hex colors: alpha is the proportion of color1.
+        For example, _mix("#ffffff", "#000000", 0.5) → "#808080".
         """
         def hex_to_rgb(h: str) -> tuple[int, int, int]:
             h = h.lstrip("#")

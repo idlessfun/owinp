@@ -1,4 +1,4 @@
-# Виртуальное окружение Python
+# Python Virtual Environment
 .venv/
 venv/
 env/
@@ -7,28 +7,28 @@ env/
 .idea/
 *.iml
 
-# Python кэш
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 
-# Сборки
+# Builds
 build/
 dist/
 *.egg-info/
 
-# Тестовое
+# Test
 .pytest_cache/
 .coverage
 htmlcov/
 
-# ОС
+# OS
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Локальные файлы
+# Local Files
 *.log
 .env
 .vscode/
