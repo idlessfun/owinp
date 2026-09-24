@@ -64,21 +64,25 @@ pip install -r requirements.txt
 # Run
 python main.py
 ```
+## 🔒 Security & Privacy
 
-## 🔒 Security
+OWINP is 100% open-source, transparent, and safe. We believe in zero telemetry and maximum user control.
 
-⚠️ Note about Microsoft Defender
+### ✅ Antivirus Clearance
+- **Microsoft Defender**: Officially reviewed and cleared by Microsoft. The installer is no longer flagged as a false positive.
+- **VirusTotal**: **0/70** detections for both the Installer (`.exe`) and Portable (`.zip`) versions.
+- All other major antivirus engines (Kaspersky, Dr.Web, ESET, BitDefender, Avast, etc.) report the files as completely clean.
 
-Microsoft Defender may flag the installer as Trojan:Win32/Wacatac.C!ml — this is a known false positive for Inno Setup installers.
+### 🌐 Network Activity
+OWINP **does not collect** and **does not send** any telemetry, analytics, or tracking data.  
+The application makes **only two** types of network requests, both strictly to GitHub:
+1. **Update Check**: Queries the GitHub Releases API for the latest version.
+2. **Catalog Update**: Downloads fresh JSON cards and images from `raw.githubusercontent.com`.
 
-All other 66 antivirus engines (Kaspersky, DrWeb, ESET, BitDefender, Avast, and others) report the file as clean.
-
-If Defender blocks the installer:
-
-    Click "More info" → "Run anyway"
-    Or use the portable version — it is not affected (VirusTotal: 0/70)
-
-We have already submitted the file to Microsoft for review.
+Both checks:
+- Use **HTTPS only**.
+- Communicate **only** with `api.github.com` and `raw.githubusercontent.com`.
+- Are silently skipped if there is no internet connection (the app continues to work from the local cache).
 
 ### What the application does on the network
 
