@@ -1,0 +1,46 @@
+{
+  "id": "obs-studio",
+  "name": "OBS Studio",
+  "description": "Свободная программа для записи видео и стриминга",
+  "version": "32.1.2",
+  "category": "Медиа",
+  "size_mb": 120.0,
+  "website": "https://obsproject.com/",
+  "downloads": [
+    {
+      "label": "Скачать для Windows",
+      "url": "https://github.com/obsproject/obs-studio/releases/download/32.1.2/OBS-Studio-32.1.2-Windows-x64-Installer.exe",
+      "primary": true
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": false,
+  "developer": "OBS Project",
+  "long_description": "OBS Studio — бесплатное программное обеспечение с открытым исходным кодом для записи видео и прямой трансляции. Поддерживает Windows, macOS и Linux.",
+  "release_date": "2026-05-01",
+  "license": "GPL-2.0",
+  "icon": "obs-studio.png",
+  "requirements": [
+    "Windows 10 или 11 (64-bit)",
+    "Intel Core i5 4-го поколения или AMD FX 6300",
+    "4 ГБ оперативной памяти",
+    "DirectX 10.1-совместимая видеокарта",
+    "600 МБ свободного места"
+  ],
+  "features": [
+    "Запись видео и стриминг",
+    "Поддержка сцен и переходов",
+    "Аудиомикшер",
+    "Плагины и расширения",
+    "Кроссплатформенность (Windows, macOS, Linux)"
+  ],
+  "tags": [
+    "стриминг",
+    "запись",
+    "видео",
+    "трансляция"
+  ],
+  "screenshots": [
+    "obs-studio_1.png"
+  ]
+}
