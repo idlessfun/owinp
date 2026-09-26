@@ -2,7 +2,7 @@
   "id": "audacity",
   "name": "Audacity",
   "description": "Свободный аудиоредактор с открытым кодом",
-  "version": "3.7.4",
+  "version": "3.7.5",
   "category": "Медиа",
   "size_mb": 35.0,
   "website": "https://www.audacityteam.org/",
@@ -17,7 +17,7 @@
   "is_portable": false,
   "developer": "Muse Group",
   "long_description": "Audacity — бесплатный многодорожечный аудиоредактор и программа для записи звука с открытым исходным кодом. Поддерживает Windows, macOS и Linux.",
-  "release_date": "2025-05-22",
+  "release_date": "2027-05-22",
   "license": "GPL-2.0",
   "icon": "audacity.png",
   "requirements": [
@@ -37,8 +37,5 @@
     "редактор",
     "звук",
     "запись"
-  ],
-  "screenshots": [
-    "audacity_1.jpg"
   ]
 }
