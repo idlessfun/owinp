@@ -1,0 +1,41 @@
+{
+  "id": "audacity",
+  "name": "Audacity",
+  "description": "Свободный аудиоредактор с открытым кодом",
+  "version": "3.7.5",
+  "category": "Медиа",
+  "size_mb": 35.0,
+  "website": "https://www.audacityteam.org/",
+  "downloads": [
+    {
+      "label": "Скачать для Windows",
+      "url": "https://github.com/audacity/audacity/releases/download/Audacity-3.7.4/audacity-win-3.7.4-64bit.exe",
+      "primary": true
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": false,
+  "developer": "Muse Group",
+  "long_description": "Audacity — бесплатный многодорожечный аудиоредактор и программа для записи звука с открытым исходным кодом. Поддерживает Windows, macOS и Linux.",
+  "release_date": "2027-05-22",
+  "license": "GPL-2.0",
+  "icon": "audacity.png",
+  "requirements": [
+    "Windows 10 или 11 (64-bit)",
+    "4 ГБ оперативной памяти",
+    "100 МБ свободного места"
+  ],
+  "features": [
+    "Многодорожечная запись и редактирование",
+    "Поддержка множества аудиоформатов",
+    "Эффекты и плагины",
+    "Спектрограмма и анализ",
+    "Открытый исходный код"
+  ],
+  "tags": [
+    "аудио",
+    "редактор",
+    "звук",
+    "запись"
+  ]
+}
