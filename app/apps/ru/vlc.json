@@ -1,40 +1,42 @@
 {
-    "id": "vlc",
-    "name": "VLC Media Player",
-    "developer": "VideoLAN",
-    "description": "Свободный медиаплеер, воспроизводит почти всё.",
-    "long_description": "VLC — мощный медиаплеер с открытым исходным кодом. Поддерживает множество форматов без дополнительных кодеков, работает с DVD, аудио-CD и сетевыми потоками.",
-    "version": "3.0.21",
-    "release_date": "2024-06-12",
-    "category": "Медиа",
-    "size_mb": 40.0,
-    "license": "GPL",
-    "website": "https://www.videolan.org/vlc/",
-    "downloads": [
+  "id": "vlc",
+  "name": "VLC Media Player",
+  "description": "Свободный медиаплеер, воспроизводит почти всё.",
+  "version": "3.0.21",
+  "category": "Медиа",
+  "size_mb": 40.0,
+  "website": "https://www.videolan.org/vlc/",
+  "downloads": [
     {
-        "label": "Скачать",
-        "url": "https://get.videolan.org/vlc/3.0.21/win64/vlc-3.0.21-win64.exe",
-        "primary": true
-    },
-    {
-        "label": "Зеркало (Яндекс)",
-        "url": "https://get.videolan.org/vlc/3.0.21/win64/vlc-3.0.21-win64.exe",
-        "primary": false
+      "label": "Скачать",
+      "url": "https://get.videolan.org/vlc/3.0.21/win64/vlc-3.0.21-win64.exe",
+      "primary": true
     }
-],
-    "icon": "vlc.png",
-    "requirements": [
-        "Windows 7 и выше",
-        "64-битная система"
-    ],
-    "features": [
-        "Поддержка всех популярных форматов",
-        "Воспроизведение без дополнительных кодеков",
-        "Открытый исходный код",
-        "Без рекламы и телеметрии"
-    ],
-    "screenshots": [],
-    "is_portable": false,
-    "is_open_source": true,
-    "tags": ["медиа", "видео", "аудио", "плеер"]
+  ],
+  "is_open_source": true,
+  "is_portable": false,
+  "developer": "VideoLAN",
+  "long_description": "VLC — мощный медиаплеер с открытым исходным кодом. Поддерживает множество форматов без дополнительных кодеков, работает с DVD, аудио-CD и сетевыми потоками.",
+  "release_date": "2024-06-12",
+  "license": "GPL",
+  "icon": "vlc.png",
+  "requirements": [
+    "Windows 7 и выше",
+    "64-битная система"
+  ],
+  "features": [
+    "Поддержка всех популярных форматов",
+    "Воспроизведение без дополнительных кодеков",
+    "Открытый исходный код",
+    "Без рекламы и телеметрии"
+  ],
+  "tags": [
+    "медиа",
+    "видео",
+    "аудио",
+    "плеер"
+  ],
+  "screenshots": [
+    "vlc_1.png"
+  ]
 }
