@@ -1,0 +1,40 @@
+{
+  "id": "notepadpp",
+  "name": "Notepad++",
+  "description": "Мощный текстовый редактор с подсветкой синтаксиса.",
+  "version": "8.6.9",
+  "category": "Разработка",
+  "size_mb": 4.8,
+  "website": "https://notepad-plus-plus.org/",
+  "downloads": [
+    {
+      "label": "Скачать",
+      "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.9/npp.8.6.9.Installer.x64.exe",
+      "primary": true
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": false,
+  "developer": "Don Ho",
+  "long_description": "Notepad++ — свободный текстовый редактор, который заменяет стандартный «Блокнот» Windows. Поддерживает подсветку синтаксиса для более чем 80 языков программирования, сворачивание кода, множественные вкладки, регулярные выражения и многое другое.",
+  "release_date": "2024-11-24",
+  "license": "GPL",
+  "icon": "notepadpp.png",
+  "requirements": [
+    "Windows 7 и выше",
+    "64-битная система"
+  ],
+  "features": [
+    "Подсветка синтаксиса для 80+ языков",
+    "Множественные вкладки",
+    "Регулярные выражения",
+    "Плагины и расширения",
+    "Открытый исходный код"
+  ],
+  "tags": [
+    "редактор",
+    "текст",
+    "код",
+    "разработка"
+  ]
+}
