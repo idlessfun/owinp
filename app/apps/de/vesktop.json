@@ -1,0 +1,37 @@
+{
+  "id": "vesktop",
+  "name": "Vesktop",
+  "description": "Vesktop - это модифицированное приложение Discord, призванное обеспечить более высокую производительность и улучшить поддержку Linux.",
+  "version": "1.6.7",
+  "category": "Месенджеры",
+  "size_mb": 191.0,
+  "website": "https://vesktop.dev/",
+  "downloads": [
+    {
+      "label": "Скачать c GITHUB",
+      "url": "https://github.com/Vencord/Vesktop/releases/download/v1.6.7/Vesktop-Setup-1.6.7.exe",
+      "primary": true
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": false,
+  "developer": "Vendicated",
+  "release_date": "2026.08.16",
+  "license": "GPL-3.0",
+  "icon": "vesktop.png",
+  "requirements": [
+    "Windows 10 и выше"
+  ],
+  "features": [
+    "Плагины, темы, Кастомизация, всё это можно настроить"
+  ],
+  "tags": [
+    "месенджер",
+    "discord",
+    "open-source",
+    "производительность"
+  ],
+  "screenshots": [
+    "vesktop_1.png"
+  ]
+}
