@@ -8,6 +8,11 @@
 AppId={{B3C2A9E0-6D9F-4F5A-9B8C-7E6D5C4B3A2F}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
+VersionInfoVersion={#MyAppVersion}
+VersionInfoCompany=OWINP Contributors
+VersionInfoDescription=OWINP Setup
+VersionInfoProductName=OWINP
+VersionInfoProductVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}

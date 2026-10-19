@@ -11,8 +11,8 @@
 
 **Ready-made version for Windows** — no need to install Python:
 
-- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.3.0/OWINP-Setup-0.3.0.exe)** — regular installation into the system (21.7 MB)
-- 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.3.0/OWINP-Portable-0.3.0.zip)** — unpack and run (29 MB)
+- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.3.0/OWINP-Setup-0.3.0.exe)** — regular installation into the system (36.0 MB)
+- 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.3.0/OWINP-Portable-0.3.0.zip)** — unpack and run (34.8 MB)
 
 Both versions are in the [**Releases**](https://github.com/idlessfun/owinp/releases/latest) section.
 
