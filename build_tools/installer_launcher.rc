@@ -1,0 +1,33 @@
+#include "resource.h"
+
+IDI_APP ICON "app\\resources\\icon.ico"
+IDR_SETUP RCDATA "build\\OWINP-Setup-core.exe"
+
+1 VERSIONINFO
+FILEVERSION 0, 3, 0, 0
+PRODUCTVERSION 0, 3, 0, 0
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS 0x40004L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "OWINP Contributors"
+            VALUE "FileDescription", "OWINP Setup"
+            VALUE "FileVersion", "0.3.0"
+            VALUE "InternalName", "OWINP-Setup"
+            VALUE "LegalCopyright", "MIT License"
+            VALUE "OriginalFilename", "OWINP-Setup-0.3.0.exe"
+            VALUE "ProductName", "OWINP"
+            VALUE "ProductVersion", "0.3.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

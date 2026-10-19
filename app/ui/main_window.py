@@ -51,7 +51,6 @@ from app.core.translator import (
 from app.ui.apps_page import AppsPage
 from app.ui.update_dialog import UpdateDialog
 from app.ui import animations
-from app.core.app_restart import restart_application
 
 
 class MainWindow(QMainWindow):
@@ -562,7 +561,7 @@ class MainWindow(QMainWindow):
         self._apply_styles()
 
     def _on_language_changed(self) -> None:
-        """Saves the language and offers to restart the application."""
+        """Applies a new language immediately by rebuilding the interface."""
         lang_code = self.language_combo.currentData()
         if not lang_code:
             return
@@ -571,33 +570,39 @@ class MainWindow(QMainWindow):
 
         self.user_settings["language"] = lang_code
         save_user_settings(self.user_settings)
-        self._save_window_geometry()
+        set_language(lang_code)
         print(f"[main] New language: {lang_code}")
 
-        answer = QMessageBox.question(
-            self,
-            t("dialog.restart.title"),
-            t("dialog.restart.text"),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.Yes,
-        )
+        # The combo that emitted this signal lives in the old widget tree.
+        # Rebuild after the signal handler returns, otherwise Qt would delete
+        # the widget while it is still emitting.
+        QTimer.singleShot(0, self._rebuild_ui_for_language)
 
-        if answer != QMessageBox.StandardButton.Yes:
-            QMessageBox.information(
-                self,
-                t("dialog.restart.title"),
-                t("dialog.restart.saved"),
-            )
-            return
+    def _rebuild_ui_for_language(self) -> None:
+        """Recreates the whole window content with the new translations."""
+        row = self.nav_list.currentRow()
 
-        if restart_application():
-            QApplication.quit()
-        else:
-            QMessageBox.warning(
-                self,
-                t("dialog.restart.title"),
-                t("dialog.restart.failed"),
-            )
+        # Window-level shortcuts are parented to the window, not to the page
+        for shortcut in getattr(self, "_shortcuts", []):
+            shortcut.setEnabled(False)
+            shortcut.deleteLater()
+        self._shortcuts = []
+
+        try:
+            self._build_ui()
+            self._apply_styles()
+            self._setup_shortcuts()
+
+            if 0 <= row < self.content_area.count():
+                self.nav_list.setCurrentRow(row)
+
+            if self._update_info and self.user_settings.get("show_update_banner", True):
+                self._show_update_banner()
+
+            print(f"[main] UI rebuilt for language: {self.user_settings['language']}")
+        except Exception as e:
+            print(f"[main] Failed to rebuild the UI: {e}")
+            QMessageBox.warning(self, t("common.error"), str(e))
 
     def _on_animations_toggled(self, value: bool) -> None:
         """Immediately applies the animation switch."""
@@ -670,12 +675,18 @@ class MainWindow(QMainWindow):
         if answer != QMessageBox.StandardButton.Yes:
             return
 
-        # Remember the language: the interface itself needs a restart to change
+        # Remember the language: it may require rebuilding the whole UI
         old_lang = self.user_settings.get("language", "en")
 
         # Clear the memory
         self.user_settings = dict(DEFAULTS)
         save_user_settings(self.user_settings)
+        print("[main] All settings have been reset to their defaults")
+
+        if self.user_settings.get("language") != old_lang:
+            set_language(self.user_settings["language"])
+            QTimer.singleShot(0, self._rebuild_ui_for_language)
+            return
 
         # Updating UI Controls
         self._sync_settings_ui()
@@ -683,14 +694,6 @@ class MainWindow(QMainWindow):
         # Applying Styles
         self._apply_styles()
         self.apps_page.set_compact_mode(self.user_settings.get("compact_mode", False))
-        print("[main] All settings have been reset to their defaults")
-
-        if self.user_settings.get("language") != old_lang:
-            QMessageBox.information(
-                self,
-                t("dialog.restart.title"),
-                t("dialog.restart.text"),
-            )
 
     def _sync_settings_ui(self) -> None:
         """Updates the values of UI controls from self.user_settings."""

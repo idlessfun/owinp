@@ -17,6 +17,7 @@ and versions follow [Semantic Versioning](https://semver.org/lang/ru/).
 - Animated startup splash (ring, icon, progress) with a setting: always / first launch / never
 - Smooth UI animations: window fade-in, page transitions, card cascade, expandable update banner, smooth download progress
 - "Low-end PC mode" — one switch that disables every animation, including the splash
+- Instant language switch (RU/EN) without restarting the application
 - Window size and position are remembered between launches
 - Hotkeys: `Ctrl+F` — search, `Esc` — back from a program page, `F5` — refresh catalog
 - Dark-themed scrollbars and checkboxes
@@ -41,8 +42,9 @@ and versions follow [Semantic Versioning](https://semver.org/lang/ru/).
 - Version comparison handles `v` prefixes and pre-release tags (`1.0.0-beta`)
 - Update check no longer fails on Windows consoles with cp1251/cp866 code pages
 - First run now really detects the system language (the auto-detect branch was unreachable)
-- Language switch now restarts OWINP automatically instead of requiring a manual restart
-- Installer no longer fails on registry access: it installs per-user without registry writes
+- Language switch is applied immediately by rebuilding the UI, without a process restart
+- Installer uses a launcher with its own writable temp folder, so a broken `%TEMP%` no longer blocks installation
+- Installer is per-user and does not write to the registry
 - Settings and catalog JSON saved with a UTF-8 BOM are read correctly
 - External links are restricted to `http`/`https`
 

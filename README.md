@@ -11,7 +11,7 @@
 
 **Ready-made version for Windows** — no need to install Python:
 
-- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.3.0/OWINP-Setup-0.3.0.exe)** — regular installation into the system (36.0 MB)
+- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.3.0/OWINP-Setup-0.3.0.exe)** — regular installation into the system (36.1 MB)
 - 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.3.0/OWINP-Portable-0.3.0.zip)** — unpack and run (34.8 MB)
 
 Both versions are in the [**Releases**](https://github.com/idlessfun/owinp/releases/latest) section.
@@ -20,6 +20,7 @@ Both versions are in the [**Releases**](https://github.com/idlessfun/owinp/relea
 
 - 🎨 **Modern interface** — dark theme, F-Droid style design
 - ✨ **Smooth animations** — animated startup splash, page transitions and card cascade, plus a low-end PC mode that turns every animation off
+- 🌐 **Instant language switch** — Russian/English is applied immediately, no restart needed
 - 📦 **Program catalog** — cards with description, characteristics, and screenshots
 - 🔍 **Search and filters** — instant search by name, description, and tags, filter by categories
 - ⬇️ **Built-in downloading** — progress bar, speed, cancellation
@@ -46,6 +47,7 @@ Both versions are in the [**Releases**](https://github.com/idlessfun/owinp/relea
 - installs to `%LOCALAPPDATA%\Programs\OWINP`
 - does not write to the Windows registry or system folders
 - uninstall via Start Menu → OWINP → Uninstall OWINP (or delete the folder)
+- uses its own writable folder `%LOCALAPPDATA%\OWINP\installer-temp` for unpacking, so a broken or locked `%TEMP%` cannot block the installation
 
 ### Option 2 — From source
 
