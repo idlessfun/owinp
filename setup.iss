@@ -17,9 +17,10 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={autopf}\{#MyAppName}
+DefaultDirName={localappdata}\Programs\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
+DisableDirPage=auto
 OutputDir=build
 OutputBaseFilename=OWINP-Setup-{#MyAppVersion}
 SetupIconFile=app\resources\icon.ico
@@ -27,6 +28,16 @@ Compression=zip
 SolidCompression=no
 WizardStyle=modern
 PrivilegesRequired=lowest
+MinVersion=10.0
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+CloseApplications=yes
+RestartApplications=no
+UsePreviousAppDir=yes
+; No registry writes at all: uninstall via the Start Menu shortcut.
+; This also avoids "access denied" on locked-down machines.
+CreateUninstallRegKey=no
+UninstallDisplayIcon={app}\{#MyAppExeName}
 
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"

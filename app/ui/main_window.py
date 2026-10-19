@@ -51,6 +51,7 @@ from app.core.translator import (
 from app.ui.apps_page import AppsPage
 from app.ui.update_dialog import UpdateDialog
 from app.ui import animations
+from app.core.app_restart import restart_application
 
 
 class MainWindow(QMainWindow):
@@ -561,7 +562,7 @@ class MainWindow(QMainWindow):
         self._apply_styles()
 
     def _on_language_changed(self) -> None:
-        """Asks the user to restart the app manually to apply the new language."""
+        """Saves the language and offers to restart the application."""
         lang_code = self.language_combo.currentData()
         if not lang_code:
             return
@@ -570,13 +571,33 @@ class MainWindow(QMainWindow):
 
         self.user_settings["language"] = lang_code
         save_user_settings(self.user_settings)
+        self._save_window_geometry()
         print(f"[main] New language: {lang_code}")
 
-        QMessageBox.information(
+        answer = QMessageBox.question(
             self,
             t("dialog.restart.title"),
             t("dialog.restart.text"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
         )
+
+        if answer != QMessageBox.StandardButton.Yes:
+            QMessageBox.information(
+                self,
+                t("dialog.restart.title"),
+                t("dialog.restart.saved"),
+            )
+            return
+
+        if restart_application():
+            QApplication.quit()
+        else:
+            QMessageBox.warning(
+                self,
+                t("dialog.restart.title"),
+                t("dialog.restart.failed"),
+            )
 
     def _on_animations_toggled(self, value: bool) -> None:
         """Immediately applies the animation switch."""

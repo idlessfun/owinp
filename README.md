@@ -42,6 +42,11 @@ Both versions are in the [**Releases**](https://github.com/idlessfun/owinp/relea
 - Windows 10 or 11 (64-bit)
 - ~200 MB of free space
 
+**The installer is per-user and does not require administrator rights:**
+- installs to `%LOCALAPPDATA%\Programs\OWINP`
+- does not write to the Windows registry or system folders
+- uninstall via Start Menu → OWINP → Uninstall OWINP (or delete the folder)
+
 ### Option 2 — From source
 
 **Requirements:**
@@ -70,16 +75,17 @@ python main.py
 
 ⚠️ Note about Microsoft Defender
 
-Microsoft Defender may flag the installer as Trojan:Win32/Wacatac.C!ml — this is a known false positive for Inno Setup installers.
+Microsoft Defender and SmartScreen may warn about unsigned installers — this is a common heuristic false positive for Inno Setup builds, not evidence of malware.
 
-All other 66 antivirus engines (Kaspersky, DrWeb, ESET, BitDefender, Avast, and others) report the file as clean.
 
-If Defender blocks the installer:
+If Defender or SmartScreen blocks the installer:
 
     Click "More info" → "Run anyway"
-    Or use the portable version — it is not affected (VirusTotal: 0/70)
+    Or use the portable version — it is not affected (checksums are in the release)
 
-We have already submitted the file to Microsoft for review.
+The installer is per-user: it does not request administrator rights, does not write to the registry, and touches only `%LOCALAPPDATA%\Programs\OWINP`, the Start Menu and the app's own `%APPDATA%\OWINP` folder.
+
+Compare the SHA-256 checksum of the downloaded file with the one published in the release.
 
 ### What the application does on the network
 

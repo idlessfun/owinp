@@ -66,7 +66,9 @@
     "settings.language": "Language:",
 
     "dialog.restart.title": "Language changed",
-    "dialog.restart.text": "To apply the new language, please close and reopen OWINP manually.\n\nThe language is saved and will be applied on the next launch.",
+    "dialog.restart.text": "Restart OWINP now to apply the new language?",
+    "dialog.restart.saved": "The language is saved and will be applied on the next launch.",
+    "dialog.restart.failed": "Could not start a new instance automatically.\nPlease close OWINP and open it again manually.",
 
     "dialog.update.title": "Update Available",
     "dialog.update.header": "🎉 A new version of OWINP is available",
