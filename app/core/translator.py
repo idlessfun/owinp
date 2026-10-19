@@ -22,6 +22,7 @@ FALLBACK_LANG = "en"
 _current_lang = FALLBACK_LANG
 _translations: dict[str, str] = {}
 _fallback: dict[str, str] = {}
+_fallback_loaded = False
 
 
 def _read_json(path: Path) -> dict:
@@ -62,19 +63,28 @@ def load_available_languages() -> list[dict]:
     return sorted(languages, key=sort_key)
 
 
+def _load_fallback() -> None:
+    """Loads the English fallback dictionary once."""
+    global _fallback, _fallback_loaded
+    if _fallback_loaded:
+        return
+    _fallback = _read_json(LOCALES_DIR / f"{FALLBACK_LANG}.json")
+    _fallback_loaded = True
+
+
 def set_language(lang_code: str) -> bool:
     """
     Sets the current language and loads its translations.
     Returns True on success.
     """
-    global _current_lang, _translations, _fallback
+    global _current_lang, _translations, _fallback_loaded
 
-    # Always load fallback (English)
-    fallback_path = LOCALES_DIR / f"{FALLBACK_LANG}.json"
-    _fallback = _read_json(fallback_path)
+    # Always reload fallback (English)
+    _fallback_loaded = False
+    _load_fallback()
 
     if lang_code == FALLBACK_LANG:
-        _translations = _fallback
+        _translations = dict(_fallback)
         _current_lang = FALLBACK_LANG
         print(f"[translator] Language set: {FALLBACK_LANG}")
         return True
@@ -82,11 +92,18 @@ def set_language(lang_code: str) -> bool:
     path = LOCALES_DIR / f"{lang_code}.json"
     if not path.exists():
         print(f"[translator] Language file not found: {path}")
-        _translations = _fallback
+        _translations = dict(_fallback)
         _current_lang = FALLBACK_LANG
         return False
 
-    _translations = _read_json(path)
+    data = _read_json(path)
+    if not data:
+        print(f"[translator] Language file is empty or broken: {path}")
+        _translations = dict(_fallback)
+        _current_lang = FALLBACK_LANG
+        return False
+
+    _translations = data
     _current_lang = lang_code
     print(f"[translator] Language set: {lang_code}")
     return True
@@ -107,7 +124,11 @@ def t(key: str, **kwargs) -> str:
     kwargs: substitute {name} placeholders.
         Example: t("hello", name="Anton") → "Hello, Anton"
     """
+    _load_fallback()
+
     text = _translations.get(key) or _fallback.get(key) or key
+    if not isinstance(text, str):
+        text = str(text)
     if kwargs:
         try:
             text = text.format(**kwargs)
@@ -121,12 +142,33 @@ def detect_system_language() -> str:
     Tries to detect system language.
     Returns language code if a matching locale file exists, else 'en'.
     """
+    system_lang = ""
+
+    # Qt knows the real system locale even on Windows ("ru_RU", not "Russian_Russia")
     try:
-        system_lang, _ = locale.getdefaultlocale()
-        if system_lang:
-            code = system_lang.split("_")[0].lower()
-            if (LOCALES_DIR / f"{code}.json").exists():
-                return code
+        from PySide6.QtCore import QLocale
+        system_lang = QLocale.system().name() or ""
     except Exception:
-        pass
+        system_lang = ""
+
+    if not system_lang:
+        try:
+            # Python 3.12+: getdefaultlocale() is deprecated, getlocale() is preferred
+            system_lang = locale.getlocale()[0] or ""
+        except Exception:
+            system_lang = ""
+
+    if not system_lang:
+        try:
+            getter = getattr(locale, "getdefaultlocale", None)
+            if callable(getter):
+                system_lang = getter()[0] or ""
+        except Exception:
+            system_lang = ""
+
+    if system_lang:
+        code = system_lang.replace("-", "_").split("_")[0].lower()
+        if (LOCALES_DIR / f"{code}.json").exists():
+            return code
+
     return FALLBACK_LANG

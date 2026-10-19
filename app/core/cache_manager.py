@@ -8,37 +8,90 @@ Security:
 - Reads only its own folder
 - Does not delete anything outside its own folder
 - Validates each JSON file before returning it
+- Asset names coming from remote JSON are reduced to a bare file name,
+  so "../../something" can never escape the cache folder
 """
 
 import json
 import os
 import shutil
+import time
 from pathlib import Path
 
 
-# --- Paths (same as in catalog_loader.py) ---
+# --- Paths ---
 APPDATA = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
 CACHE_ROOT = APPDATA / "OWINP" / "cache"
 CACHE_APPS = CACHE_ROOT / "apps"                # Root folder for language subfolders
 CACHE_ICONS = CACHE_ROOT / "icons"              # Icons
 CACHE_SCREENSHOTS = CACHE_ROOT / "screenshots"  # Screenshots
 
+# --- Throttling ---
+LAST_UPDATE_FILE = CACHE_ROOT / "last_update.txt"
+THROTTLE_SECONDS = 3600  # 1 hour
+
+LAST_VERSION_CHECK_FILE = CACHE_ROOT / "last_version_check.txt"
+VERSION_CHECK_INTERVAL = 3600  # 1 hour
+
+
+def _safe_component(value: object) -> str:
+    """
+    Turns an arbitrary value into a single safe path component.
+
+    Returns "" if the value cannot be used as a file/folder name.
+    """
+    if not isinstance(value, str):
+        return ""
+
+    name = value.strip().replace("\\", "/").rsplit("/", 1)[-1].strip()
+
+    # Reject empty names, "." / "..", drive letters and control characters
+    if not name or name in (".", "..") or ":" in name:
+        return ""
+    if any(ord(ch) < 32 for ch in name):
+        return ""
+
+    return name
+
+
+def _safe_asset(base: Path, name: object) -> Path | None:
+    """
+    Builds a path to an asset inside `base` and verifies that the result
+    really stays inside `base`. Returns None for unsafe or missing names.
+    """
+    safe_name = _safe_component(name)
+    if not safe_name:
+        return None
+
+    candidate = base / safe_name
+    try:
+        if candidate.resolve().parent != base.resolve():
+            return None
+    except OSError:
+        return None
+
+    return candidate
+
 
 def cache_exists() -> bool:
     """Checks if there is at least one JSON file in any language folder."""
     if not CACHE_APPS.exists():
         return False
-    # Check all language subfolders
-    for lang_dir in CACHE_APPS.iterdir():
-        if lang_dir.is_dir() and any(lang_dir.glob("*.json")):
-            return True
+
+    try:
+        for lang_dir in CACHE_APPS.iterdir():
+            if lang_dir.is_dir() and any(lang_dir.glob("*.json")):
+                return True
+    except OSError as e:
+        print(f"[cache] Failed to scan the cache: {e}")
+
     return False
 
 
 def cache_exists_for_lang(lang: str) -> bool:
     """Checks if there is at least one JSON file for the specific language."""
-    folder = CACHE_APPS / lang
-    if not folder.exists():
+    folder = CACHE_APPS / (_safe_component(lang) or "en")
+    if not folder.is_dir():
         return False
     return any(folder.glob("*.json"))
 
@@ -63,6 +116,8 @@ def load_cached_apps(lang: str = "") -> list[dict]:
         except Exception:
             lang = "en"
 
+    lang = _safe_component(lang) or "en"
+
     # Try the language folder
     apps = _read_apps_from_cache_dir(CACHE_APPS / lang)
 
@@ -75,7 +130,7 @@ def load_cached_apps(lang: str = "") -> list[dict]:
 
 def _read_apps_from_cache_dir(directory: Path) -> list[dict]:
     """Helper: reads all JSON files from a specific cache folder."""
-    if not directory.exists():
+    if not directory.is_dir():
         return []
 
     apps: list[dict] = []
@@ -89,15 +144,19 @@ def _read_apps_from_cache_dir(directory: Path) -> list[dict]:
                 print(f"[cache] {json_file.name} — not a JSON object, skipped")
                 continue
 
-            if "id" not in data or "name" not in data:
-                print(f"[cache] {json_file.name} — missing id/name, skipped")
+            if not isinstance(data.get("id"), str) or not data["id"].strip():
+                print(f"[cache] {json_file.name} — missing id, skipped")
+                continue
+
+            if not isinstance(data.get("name"), str):
+                print(f"[cache] {json_file.name} — missing name, skipped")
                 continue
 
             apps.append(data)
 
         except json.JSONDecodeError as e:
             print(f"[cache] {json_file.name} — broken JSON: {e}")
-        except Exception as e:
+        except OSError as e:
             print(f"[cache] {json_file.name} — read error: {e}")
 
     return apps
@@ -106,19 +165,35 @@ def _read_apps_from_cache_dir(directory: Path) -> list[dict]:
 def clear_cache() -> bool:
     """
     Clears the entire cache folder.
+
+    Also removes the "last update" timestamp: otherwise the application would
+    keep an empty catalog for up to an hour before the next automatic refresh.
+
     Returns True on success.
     """
-    if not CACHE_APPS.exists():
-        return True
+    ok = True
+
+    if CACHE_APPS.exists():
+        try:
+            shutil.rmtree(CACHE_APPS)
+            print(f"[cache] Cleared: {CACHE_APPS}")
+        except OSError as e:
+            print(f"[cache] Failed to clear the cache: {e}")
+            ok = False
 
     try:
-        shutil.rmtree(CACHE_APPS)
         CACHE_APPS.mkdir(parents=True, exist_ok=True)
-        print(f"[cache] Cleared: {CACHE_APPS}")
-        return True
-    except Exception as e:
-        print(f"[cache] Failed to clear the cache: {e}")
-        return False
+    except OSError as e:
+        print(f"[cache] Failed to recreate the cache folder: {e}")
+        ok = False
+
+    # Force the next catalog check to run immediately
+    try:
+        LAST_UPDATE_FILE.unlink(missing_ok=True)
+    except OSError as e:
+        print(f"[cache] Failed to reset the update timestamp: {e}")
+
+    return ok
 
 
 def get_cache_dir() -> Path:
@@ -133,16 +208,12 @@ def get_cache_apps_dir(lang: str) -> Path:
 
     Example: get_cache_apps_dir("ru") -> %APPDATA%/OWINP/cache/apps/ru
     """
-    folder = CACHE_APPS / lang
+    folder = CACHE_APPS / (_safe_component(lang) or "en")
     folder.mkdir(parents=True, exist_ok=True)
     return folder
+
+
 # --- Working with the Last Update Time ---
-
-import time
-
-LAST_UPDATE_FILE = CACHE_ROOT / "last_update.txt"
-THROTTLE_SECONDS = 3600  # 1 hour
-
 
 def get_last_update_info() -> tuple[float, str]:
     """
@@ -154,26 +225,31 @@ def get_last_update_info() -> tuple[float, str]:
 
     try:
         with open(LAST_UPDATE_FILE, "r", encoding="utf-8") as f:
-            lines = f.read().strip().split("\n")
+            lines = f.read().strip().splitlines()
+
+        if not lines:
+            return 0.0, ""
 
         # Old format: only time
         if len(lines) == 1:
-            return float(lines[0]), ""
+            return float(lines[0].strip()), ""
 
         # New format: time + language
-        return float(lines[0]), lines[1].strip()
+        return float(lines[0].strip()), lines[1].strip()
 
-    except Exception:
+    except (OSError, ValueError):
         return 0.0, ""
 
 
 def set_last_update_info(lang: str) -> None:
-    """Writes the current time and language to the file."""
+    """Writes the current time and language to the file (atomically)."""
     try:
         LAST_UPDATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(LAST_UPDATE_FILE, "w", encoding="utf-8") as f:
+        tmp = LAST_UPDATE_FILE.with_name(LAST_UPDATE_FILE.name + ".tmp")
+        with open(tmp, "w", encoding="utf-8") as f:
             f.write(f"{time.time()}\n{lang}\n")
-    except Exception as e:
+        os.replace(tmp, LAST_UPDATE_FILE)
+    except OSError as e:
         print(f"[cache] Failed to save update time: {e}")
 
 
@@ -183,6 +259,7 @@ def should_update_now(lang: str = "") -> bool:
 
     Returns True if:
     - Never updated before, OR
+    - The cache was cleared, OR
     - Language changed since the last update, OR
     - More than THROTTLE_SECONDS have passed
     """
@@ -199,15 +276,16 @@ def should_update_now(lang: str = "") -> bool:
     if last_time == 0:
         return True
 
-    # Language changed — update immediately
-    if last_lang and last_lang != lang:
-        print(f"[cache] Language changed ({last_lang} -> {lang}), updating")
+    # Language changed — update immediately.
+    # An empty last_lang means the file uses the old format, so update once now.
+    if last_lang != lang:
+        print(f"[cache] Language changed ({last_lang or '?'} -> {lang}), updating")
         return True
 
     return (time.time() - last_time) > THROTTLE_SECONDS
 
-# --- Working with Images ---
 
+# --- Working with Images ---
 
 def find_icon(app_data: dict) -> Path | None:
     """
@@ -220,24 +298,23 @@ def find_icon(app_data: dict) -> Path | None:
 
     Returns the path to the found file or None.
     """
-    if not CACHE_ICONS.exists():
+    if not CACHE_ICONS.is_dir() or not isinstance(app_data, dict):
         return None
 
-    app_id = app_data.get("id", "")
+    app_id = _safe_component(app_data.get("id", ""))
 
-    # First—icon_url: filename = <id>.<ext>
+    # First — icon_url: filename = <id>.<ext>
     if app_data.get("icon_url") and app_id:
-        # Trying Out Popular Extensions
         for ext in (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".ico"):
-            candidate = CACHE_ICONS / f"{app_id}{ext}"
-            if candidate.exists():
+            candidate = _safe_asset(CACHE_ICONS, f"{app_id}{ext}")
+            if candidate is not None and candidate.is_file():
                 return candidate
 
-    # Then — icon: the file name as is
+    # Then — icon: the file name as is (basename only)
     icon_name = app_data.get("icon")
     if icon_name:
-        candidate = CACHE_ICONS / icon_name
-        if candidate.exists():
+        candidate = _safe_asset(CACHE_ICONS, icon_name)
+        if candidate is not None and candidate.is_file():
             return candidate
 
     return None
@@ -253,23 +330,22 @@ def find_screenshot(app_data: dict, name_or_index) -> Path | None:
 
     Returns the Path to the file found, or None.
     """
-    if not CACHE_SCREENSHOTS.exists():
+    if not CACHE_SCREENSHOTS.is_dir() or not isinstance(app_data, dict):
         return None
-
-    app_id = app_data.get("id", "")
 
     # By filename (from our repo)
     if isinstance(name_or_index, str):
-        candidate = CACHE_SCREENSHOTS / name_or_index
-        if candidate.exists():
+        candidate = _safe_asset(CACHE_SCREENSHOTS, name_or_index)
+        if candidate is not None and candidate.is_file():
             return candidate
         return None
 
     # By index (from an external URL)
+    app_id = _safe_component(app_data.get("id", ""))
     if isinstance(name_or_index, int) and app_id:
         for ext in (".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".ico"):
-            candidate = CACHE_SCREENSHOTS / f"{app_id}_{name_or_index}{ext}"
-            if candidate.exists():
+            candidate = _safe_asset(CACHE_SCREENSHOTS, f"{app_id}_{name_or_index}{ext}")
+            if candidate is not None and candidate.is_file():
                 return candidate
 
     return None
@@ -287,16 +363,13 @@ def clear_assets_cache() -> bool:
                 shutil.rmtree(folder)
                 folder.mkdir(parents=True, exist_ok=True)
                 print(f"[cache] Cleaned: {folder}")
-            except Exception as e:
+            except OSError as e:
                 print(f"[cache] Failed to clear {folder}: {e}")
                 success = False
     return success
 
+
 # --- Working with the version check time ---
-
-LAST_VERSION_CHECK_FILE = APPDATA / "OWINP" / "cache" / "last_version_check.txt"
-VERSION_CHECK_INTERVAL = 3600  # 1 hour
-
 
 def get_last_version_check() -> float:
     """
@@ -308,7 +381,7 @@ def get_last_version_check() -> float:
     try:
         with open(LAST_VERSION_CHECK_FILE, "r", encoding="utf-8") as f:
             return float(f.read().strip())
-    except Exception:
+    except (OSError, ValueError):
         return 0.0
 
 
@@ -316,9 +389,11 @@ def set_last_version_check() -> None:
     """Records the current time as the time of the last version check."""
     try:
         LAST_VERSION_CHECK_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(LAST_VERSION_CHECK_FILE, "w", encoding="utf-8") as f:
+        tmp = LAST_VERSION_CHECK_FILE.with_name(LAST_VERSION_CHECK_FILE.name + ".tmp")
+        with open(tmp, "w", encoding="utf-8") as f:
             f.write(str(time.time()))
-    except Exception as e:
+        os.replace(tmp, LAST_VERSION_CHECK_FILE)
+    except OSError as e:
         print(f"[cache] Failed to save the version check time: {e}")
 
 
@@ -335,8 +410,8 @@ def should_check_version_now() -> bool:
         return True
     return (time.time() - last) > VERSION_CHECK_INTERVAL
 
-# --- Migration from old flat cache structure ---
 
+# --- Migration from old flat cache structure ---
 
 def migrate_old_cache() -> None:
     """
@@ -350,7 +425,7 @@ def migrate_old_cache() -> None:
 
     Safe to call multiple times — does nothing if there are no old files.
     """
-    if not CACHE_APPS.exists():
+    if not CACHE_APPS.is_dir():
         return
 
     removed = 0
@@ -360,7 +435,7 @@ def migrate_old_cache() -> None:
             print(f"[cache] Migrating: removing old flat file '{old_file.name}'")
             old_file.unlink()
             removed += 1
-        except Exception as e:
+        except OSError as e:
             print(f"[cache] Failed to remove {old_file.name}: {e}")
 
     if removed:

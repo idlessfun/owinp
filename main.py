@@ -13,8 +13,28 @@ from app import __version__
 from app.ui.main_window import MainWindow
 
 
+def _configure_console() -> None:
+    """
+    Makes console output safe on Windows code pages (cp1251/cp866).
+
+    Log messages may contain non-ASCII characters; without this, a print()
+    can raise UnicodeEncodeError inside a worker thread and turn a successful
+    check into a fake "unknown error".
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if not callable(reconfigure):
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+
 def main() -> int:
     """Creates an application and displays the main window."""
+    _configure_console()
+
     app = QApplication(sys.argv)
 
     app.setApplicationName("OWINP")
@@ -35,7 +55,14 @@ def main() -> int:
     window = MainWindow()
     window.show()
 
-    return app.exec()
+    try:
+        return app.exec()
+    finally:
+        # Never let a running QThread be destroyed with the process:
+        # Qt aborts in that case. Also covers a download dialog that was
+        # closed while its download was still in progress.
+        from app.core.thread_registry import shutdown_all
+        shutdown_all()
 
 
 if __name__ == "__main__":

@@ -3,8 +3,6 @@ A dialog box with information about the update.
 It displays the version, release notes, and action buttons.
 """
 
-import webbrowser
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
@@ -13,10 +11,12 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QTextBrowser,
+    QMessageBox,
 )
 
 from app.core.translator import t
 from app.ui.theme_helper import get_dialog_qss
+from app.ui.url_opener import open_external_url
 
 class UpdateDialog(QDialog):
     """
@@ -128,9 +128,14 @@ class UpdateDialog(QDialog):
     def _open_release_page(self) -> None:
         """Opens the release page in the browser."""
         url = self.info.get("url", "")
-        if url:
-            print(f"[updater] Open in a browser: {url}")
-            webbrowser.open(url)
+        if not open_external_url(url):
+            QMessageBox.warning(
+                self,
+                t("common.error"),
+                t("details.bad_url"),
+            )
+            return
+        print(f"[updater] Open in a browser: {url}")
         self.accept()
 
     # ------------------------------------------------------------------

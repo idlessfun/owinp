@@ -92,6 +92,9 @@ def load_user_settings() -> dict:
     try:
         with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
+        if not isinstance(data, dict):
+            print("[user_settings] Invalid settings file, defaults are used")
+            return dict(DEFAULTS)
         result = dict(DEFAULTS)
         result.update(data)
         return result
@@ -101,11 +104,13 @@ def load_user_settings() -> dict:
 
 
 def save_user_settings(settings: dict) -> bool:
-    """Saves the settings."""
+    """Saves the settings (atomically, so a crash cannot corrupt the file)."""
     try:
         SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        tmp = SETTINGS_FILE.with_name(SETTINGS_FILE.name + ".tmp")
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(settings, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, SETTINGS_FILE)
         print(f"[user_settings] Saved: {SETTINGS_FILE}")
         return True
     except Exception as e:
@@ -116,6 +121,11 @@ def save_user_settings(settings: dict) -> bool:
 def get_user_settings_path() -> Path:
     """Returns the path to the settings file."""
     return SETTINGS_FILE
+
+
+def has_saved_settings() -> bool:
+    """True if the user already has a settings file (i.e. this is not the first run)."""
+    return SETTINGS_FILE.exists()
 
 
 def get_theme(theme_id: str) -> dict:

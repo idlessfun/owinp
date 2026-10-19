@@ -41,6 +41,7 @@ def get_dialog_qss(extra: str = "") -> str:
         }}
 
         QLabel {{
+            background-color: transparent;
             color: {text_normal};
         }}
 

@@ -5,8 +5,8 @@ Runs in a background thread so as not to block the user interface.
 """
 
 import json
-import urllib.request
 import urllib.error
+import urllib.request
 
 from PySide6.QtCore import QThread, Signal
 
@@ -16,6 +16,7 @@ from app.core.cache_manager import (
     should_check_version_now,
     set_last_version_check,
 )
+from app.core.thread_registry import register, unregister
 
 # GitHub repository—this is where we'll go
 GITHUB_REPO = "idlessfun/owinp"
@@ -47,56 +48,9 @@ class UpdateChecker(QThread):
 
     def run(self) -> None:
         """Main Flow Method. Runs automatically when .start()."""
+        register(self)
         try:
-            # Throttling: if it's not a “force” request, and it was recently checked, skip it
-            if not self.force and not should_check_version_now():
-                print("[updater] Update check skipped (throttling)")
-                self.no_update.emit()
-                return
-
-            print("[updater] Check for Updates...")
-            print(f"[updater] Current version: {__version__}")
-
-            # GitHub API Request
-            req = urllib.request.Request(
-                API_URL,
-                headers={
-                    "User-Agent": f"OWINP/{__version__}",
-                    "Accept": "application/vnd.github+json",
-                },
-            )
-
-            with urllib.request.urlopen(req, timeout=10) as response:
-                data = json.loads(response.read().decode("utf-8"))
-
-            # Retrieving release information
-            tag_name = data.get("tag_name", "")          # for example "v0.2.0"
-            release_name = data.get("name", "")          # for example "OWINP v0.2.0"
-            body = data.get("body", "")                  # Release Notes
-            html_url = data.get("html_url", "")          # link to the release page
-            published_at = data.get("published_at", "")  # publication date
-
-            # Record the time of a successful check
-            set_last_version_check()
-            # Remove the "v" prefix from the tag: "v0.2.0" → "0.2.0"
-            latest_version = tag_name.lstrip("v").strip()
-
-            print(f"[updater] Latest version on GitHub: {latest_version}")
-
-            # Comparing Versions
-            if self._is_newer(latest_version, __version__):
-                print(f"[updater] ✅ An update is available: {latest_version}")
-                self.update_available.emit({
-                    "version": latest_version,
-                    "name": release_name,
-                    "body": body,
-                    "url": html_url,
-                    "published_at": published_at,
-                })
-            else:
-                print("[updater] You have the latest version")
-                self.no_update.emit()
-
+            self._check()
         except urllib.error.HTTPError as e:
             msg = f"HTTP {e.code}: {e.reason}"
             print(f"[updater] Validation error: {msg}")
@@ -112,23 +66,101 @@ class UpdateChecker(QThread):
             print(f"[updater] Validation error: {msg}")
             self.check_failed.emit(msg)
 
+        finally:
+            unregister(self)
+
+    def _check(self) -> None:
+        """Performs the actual request and emits the result signal."""
+        # Throttling: if it's not a “force” request, and it was recently checked, skip it
+        if not self.force and not should_check_version_now():
+            print("[updater] Update check skipped (throttling)")
+            self.no_update.emit()
+            return
+
+        print("[updater] Check for Updates...")
+        print(f"[updater] Current version: {__version__}")
+
+        # GitHub API Request
+        req = urllib.request.Request(
+            API_URL,
+            headers={
+                "User-Agent": f"OWINP/{__version__}",
+                "Accept": "application/vnd.github+json",
+            },
+        )
+
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode("utf-8"))
+
+        if not isinstance(data, dict):
+            self.check_failed.emit("Unexpected response from GitHub")
+            return
+
+        # Retrieving release information
+        tag_name = data.get("tag_name", "")          # for example "v0.2.0"
+        release_name = data.get("name", "")          # for example "OWINP v0.2.0"
+        body = data.get("body", "")                  # Release Notes
+        html_url = data.get("html_url", "")          # link to the release page
+        published_at = data.get("published_at", "")  # publication date
+
+        # Record the time of a successful check
+        set_last_version_check()
+
+        # Remove the "v" prefix from the tag: "v0.2.0" → "0.2.0"
+        latest_version = str(tag_name).strip().lstrip("vV").strip()
+
+        print(f"[updater] Latest version on GitHub: {latest_version}")
+
+        # Comparing Versions
+        if self._is_newer(latest_version, __version__):
+            print(f"[updater] An update is available: {latest_version}")
+            self.update_available.emit({
+                "version": latest_version,
+                "name": release_name,
+                "body": body,
+                "url": html_url,
+                "published_at": published_at,
+            })
+        else:
+            print("[updater] You have the latest version")
+            self.no_update.emit()
+
     @staticmethod
-    def _is_newer(remote: str, local: str) -> bool:
+    def _parse_version(version: str) -> tuple[int, ...] | None:
+        """
+        Converts "v1.2.3", "1.2.3-beta", "1.2.3+build" into (1, 2, 3).
+        Returns None for versions without a numeric release part.
+        """
+        if not isinstance(version, str):
+            return None
+
+        # Drop pre-release / build metadata: "1.2.3-beta.1" -> "1.2.3"
+        core = version.strip().lstrip("vV").split("-", 1)[0].split("+", 1)[0]
+        parts = core.split(".")
+
+        if not parts or not all(part.strip().isdigit() for part in parts):
+            return None
+
+        return tuple(int(part) for part in parts)
+
+    @classmethod
+    def _is_newer(cls, remote: str, local: str) -> bool:
         """
         Compares two versions of a view "0.1.0" and "0.2.0".
         Returns True if the remote version is newer than the local version.
+
+        Non-numeric versions are treated as "not newer" (the update is never
+        forced on the user because of a strange tag).
         """
-        try:
-            remote_parts = [int(x) for x in remote.split(".")]
-            local_parts = [int(x) for x in local.split(".")]
-        except ValueError:
-            # If the version is non-standard (for example, "0.2.0-beta"), we consider it "not newer"
+        remote_parts = cls._parse_version(remote)
+        local_parts = cls._parse_version(local)
+
+        if remote_parts is None or local_parts is None:
             return False
 
         # Pad with zeros to make the lengths equal
-        while len(remote_parts) < len(local_parts):
-            remote_parts.append(0)
-        while len(local_parts) < len(remote_parts):
-            local_parts.append(0)
+        length = max(len(remote_parts), len(local_parts))
+        remote_parts = remote_parts + (0,) * (length - len(remote_parts))
+        local_parts = local_parts + (0,) * (length - len(local_parts))
 
         return remote_parts > local_parts

@@ -16,6 +16,37 @@ from app.core.user_settings import load_user_settings
 APPS_DIR = Path(__file__).parent.parent / "apps"
 
 
+def _is_valid_app(data: object) -> bool:
+    """A card must be a JSON object with a non-empty string id and name."""
+    if not isinstance(data, dict):
+        return False
+    if not isinstance(data.get("id"), str) or not data["id"].strip():
+        return False
+    if not isinstance(data.get("name"), str) or not data["name"].strip():
+        return False
+    return True
+
+
+def _dedupe(apps: list[dict]) -> list[dict]:
+    """Removes cards with a duplicate id, keeping the first one."""
+    seen: set[str] = set()
+    result: list[dict] = []
+
+    for app in apps:
+        if not _is_valid_app(app):
+            continue
+
+        app_id = app["id"].strip()
+        if app_id in seen:
+            print(f"[app_loader] Duplicate id, skipped: {app_id}")
+            continue
+
+        seen.add(app_id)
+        result.append(app)
+
+    return result
+
+
 def load_all_apps() -> list[dict]:
     """
     Returns a list of all programs.
@@ -36,6 +67,7 @@ def load_all_apps() -> list[dict]:
     if cache_exists_for_lang(lang):
         cached = load_cached_apps(lang)
         if cached:
+            cached = _dedupe(cached)
             print(f"[app_loader] Loaded from the cache ({lang}): {len(cached)} items")
             return cached
 
@@ -79,7 +111,7 @@ def load_builtin_apps() -> list[dict]:
     if not apps:
         apps = _read_apps_from_dir(APPS_DIR, label="built-in [legacy]")
 
-    return apps
+    return _dedupe(apps)
 
 
 def _read_apps_from_dir(directory: Path, label: str = "built-in") -> list[dict]:
@@ -96,11 +128,17 @@ def _read_apps_from_dir(directory: Path, label: str = "built-in") -> list[dict]:
         try:
             with open(json_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
+
+            if not _is_valid_app(data):
+                print(f"[app_loader] Invalid card, skipped ({label}): {json_file.name}")
+                continue
+
             apps.append(data)
             print(f"[app_loader] Loaded ({label}): {json_file.name}")
+
         except json.JSONDecodeError as e:
             print(f"[app_loader] Error in the file {json_file.name}: {e}")
-        except Exception as e:
+        except OSError as e:
             print(f"[app_loader] Failed to read {json_file.name}: {e}")
 
     return apps

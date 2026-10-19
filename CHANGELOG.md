@@ -7,6 +7,27 @@ and versions follow [Semantic Versioning](https://semver.org/lang/ru/).
 
 ## [Unreleased]
 
+### Fixed
+- Crash on exit and overlapping update/catalog checks (a running `QThread` was destroyed)
+- The program list is rebuilt automatically after a background catalog update
+- Cache cleanup no longer deletes icons/screenshots that are still referenced by cards
+- "Clear cache" now resets the catalog update throttle instead of waiting an hour
+- A broken remote JSON can no longer overwrite a valid cached card
+- Path traversal through `icon` / `screenshots` names from catalog JSON
+- Invalid cards (non-object JSON, missing `id`/`name`) are skipped instead of crashing the list
+- Details page now starts at the top; an empty "Screenshots" section is not shown
+- Closing the download dialog no longer freezes the UI or crashes the process
+- Version comparison handles `v` prefixes and pre-release tags (`1.0.0-beta`)
+- Update check no longer fails on Windows consoles with cp1251/cp866 code pages
+- First run now really detects the system language (the auto-detect branch was unreachable)
+- External links are restricted to `http`/`https`
+
+### Changed
+- Catalog JSON and images are written atomically (temporary file + rename)
+- Icons/screenshots are revalidated with conditional HTTP requests instead of being downloaded every hour
+- Compact mode now actually changes card size
+- Settings file is written atomically
+
 ### Planned
 - GitHub token in settings
 - Admin tool adaptation for per-language cards

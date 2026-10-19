@@ -42,6 +42,7 @@
     "dialog.updates.latest": "У вас последняя версия OWINP ({version}).",
     "dialog.updates.error_title": "Ошибка проверки",
     "dialog.updates.error_text": "Не удалось проверить обновления.\n\nПроверьте подключение к интернету.\n\nОшибка: {error}",
+    "dialog.updates.in_progress": "Проверка обновлений уже выполняется. Дождитесь её завершения.",
 
     "dialog.cache.title": "Очистить кэш?",
     "dialog.cache.text": "Будут удалены:\n• скачанные JSON-карточки программ\n• иконки и скриншоты\n\nПри следующем запуске каталог скачается заново.\n\nПродолжить?",
@@ -79,6 +80,7 @@
     "download.connecting": "Подключение…",
     "download.details_init": "0 Б / 0 Б · 0 Б/с",
     "download.cancel": "Отмена",
+    "download.cancelling": "Отмена…",
     "download.done_status": "Загрузка завершена",
     "download.saved_to": "Файл сохранён:\n{path}",
     "download.no_url": "У программы не указана ссылка на скачивание.",
@@ -94,6 +96,7 @@
     "details.no_name": "Без имени",
     "details.download": "Скачать",
     "details.open_website": "Открыть сайт",
+    "details.bad_url": "Эту ссылку нельзя открыть: разрешены только ссылки http и https.",
 
     "details.section.description": "Описание",
     "details.section.features": "Возможности",

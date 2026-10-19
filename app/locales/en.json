@@ -42,6 +42,7 @@
     "dialog.updates.latest": "You have the latest version of OWINP ({version}).",
     "dialog.updates.error_title": "Validation error",
     "dialog.updates.error_text": "Failed to check for updates\n\nCheck your Internet connection.\n\nError: {error}",
+    "dialog.updates.in_progress": "The update check is already running. Please wait for it to finish.",
 
     "dialog.cache.title": "Clear the cache?",
     "dialog.cache.text": "The following will be deleted:\n• downloaded JSON program cards\n• icons and screenshots\n\nThe next time you run the program, the directory will be downloaded again.\n\nContinue?",
@@ -79,6 +80,7 @@
     "download.connecting": "Connecting…",
     "download.details_init": "0 B / 0 B · 0 B/s",
     "download.cancel": "Cancel",
+    "download.cancelling": "Cancelling…",
     "download.done_status": "Download complete",
     "download.saved_to": "File saved to:\n{path}",
     "download.no_url": "No download URL is specified for this program.",
@@ -94,6 +96,7 @@
     "details.no_name": "Unnamed",
     "details.download": "Download",
     "details.open_website": "Open website",
+    "details.bad_url": "This link cannot be opened: only http and https links are allowed.",
 
     "details.section.description": "Description",
     "details.section.features": "Features",

@@ -32,6 +32,7 @@ from app.core.user_settings import (
     load_user_settings,
     save_user_settings,
     get_user_settings_path,
+    has_saved_settings,
     get_theme,
     THEMES,
     DEFAULT_THEME,
@@ -61,13 +62,16 @@ class MainWindow(QMainWindow):
         self._checker: UpdateChecker | None = None
         self._catalog_loader: CatalogLoader | None = None
         self._manual_check = False
+        self._catalog_refresh_pending = False
+        self._closing = False
+        self._shutdown_timer: QTimer | None = None
 
         # User settings (theme, font, etc.)
         self.user_settings = load_user_settings()
 
-        # Set the UI language (from settings, or auto-detect if not set)
+        # Set the UI language: saved value, or auto-detect on the first run
         lang = self.user_settings.get("language", "")
-        if not lang:
+        if not lang or not has_saved_settings():
             lang = detect_system_language()
             self.user_settings["language"] = lang
             save_user_settings(self.user_settings)
@@ -223,8 +227,11 @@ class MainWindow(QMainWindow):
         stack.addWidget(home)
 
         # Programs
-        apps_page = AppsPage()
-        stack.addWidget(apps_page)
+        self.apps_page = AppsPage()
+        self.apps_page.refresh_requested.connect(
+            lambda: self._refresh_catalog(force=True)
+        )
+        stack.addWidget(self.apps_page)
 
         # Settings
         settings_page = self._build_settings_page()
@@ -490,6 +497,7 @@ class MainWindow(QMainWindow):
             self.update_banner.setVisible(False)
 
         if key == "compact_mode":
+            self.apps_page.set_compact_mode(value)
             self._apply_styles()
 
     def _reset_all_settings(self) -> None:
@@ -502,6 +510,9 @@ class MainWindow(QMainWindow):
         if answer != QMessageBox.StandardButton.Yes:
             return
 
+        # Remember the language: the interface itself needs a restart to change
+        old_lang = self.user_settings.get("language", "en")
+
         # Clear the memory
         self.user_settings = dict(DEFAULTS)
         save_user_settings(self.user_settings)
@@ -511,7 +522,15 @@ class MainWindow(QMainWindow):
 
         # Applying Styles
         self._apply_styles()
+        self.apps_page.set_compact_mode(self.user_settings.get("compact_mode", False))
         print("[main] All settings have been reset to their defaults")
+
+        if self.user_settings.get("language") != old_lang:
+            QMessageBox.information(
+                self,
+                t("dialog.restart.title"),
+                t("dialog.restart.text"),
+            )
 
     def _sync_settings_ui(self) -> None:
         """Updates the values of UI controls from self.user_settings."""
@@ -547,7 +566,7 @@ class MainWindow(QMainWindow):
             ("show_screenshots", self.show_screenshots_check),
         ]:
             checkbox.blockSignals(True)
-            checkbox.setChecked(self.user_settings.get(key, False))
+            checkbox.setChecked(self.user_settings.get(key, DEFAULTS.get(key, False)))
             checkbox.blockSignals(False)
 
     # ------------------------------------------------------------------
@@ -561,21 +580,40 @@ class MainWindow(QMainWindow):
     # Updates
     # ------------------------------------------------------------------
     def _check_for_updates(self) -> None:
-        self._manual_check = False
-        self._checker = UpdateChecker(force=False)
-        self._checker.update_available.connect(self._on_update_available)
-        self._checker.no_update.connect(self._on_no_update)
-        self._checker.check_failed.connect(self._on_check_failed)
-        self._checker.start()
+        self._start_update_check(force=False)
 
     def _manual_check_for_updates(self) -> None:
         print("[main] Manually Check for Updates")
-        self._manual_check = True
-        self._checker = UpdateChecker(force=True)
-        self._checker.update_available.connect(self._on_update_available)
-        self._checker.no_update.connect(self._on_no_update)
-        self._checker.check_failed.connect(self._on_check_failed)
-        self._checker.start()
+        self._start_update_check(force=True)
+
+    def _start_update_check(self, force: bool) -> None:
+        """Starts an update check, unless one is already running."""
+        if self._closing:
+            return
+
+        if self._checker is not None and self._checker.isRunning():
+            print("[main] Update check is already running — request ignored")
+            if force:
+                QMessageBox.information(
+                    self,
+                    t("dialog.updates.title"),
+                    t("dialog.updates.in_progress"),
+                )
+            return
+
+        self._manual_check = force
+        checker = UpdateChecker(force=force)
+        self._checker = checker
+        checker.update_available.connect(self._on_update_available)
+        checker.no_update.connect(self._on_no_update)
+        checker.check_failed.connect(self._on_check_failed)
+        checker.finished.connect(self._on_checker_finished)
+        checker.start()
+
+    def _on_checker_finished(self) -> None:
+        """Drops the reference to a finished thread (it is deleted by Qt)."""
+        if self.sender() is self._checker:
+            self._checker = None
 
     def _on_update_available(self, info: dict) -> None:
         """If there's an update, display a banner (if enabled in the settings)."""
@@ -621,10 +659,24 @@ class MainWindow(QMainWindow):
     # Catalog
     # ------------------------------------------------------------------
     def _refresh_catalog(self, force: bool = False) -> None:
-        self._catalog_loader = CatalogLoader(force=force)
-        self._catalog_loader.finished_ok.connect(self._on_catalog_updated)
-        self._catalog_loader.failed.connect(self._on_catalog_failed)
-        self._catalog_loader.start()
+        """Starts a catalog refresh. Only one loader may run at a time."""
+        if self._closing:
+            return
+
+        if self._catalog_loader is not None and self._catalog_loader.isRunning():
+            if force:
+                # The running loader is already fetching fresh data, so just
+                # rebuild the list when it finishes.
+                self._catalog_refresh_pending = True
+                print("[main] Catalog refresh already running — queued")
+            return
+
+        loader = CatalogLoader(force=force)
+        self._catalog_loader = loader
+        loader.finished_ok.connect(self._on_catalog_updated)
+        loader.failed.connect(self._on_catalog_failed)
+        loader.finished.connect(self._on_catalog_thread_finished)
+        loader.start()
 
     def _on_catalog_updated(self, count: int) -> None:
         if count > 0:
@@ -632,8 +684,30 @@ class MainWindow(QMainWindow):
         else:
             print("[main] Catalog remains unchanged")
 
+        # The list was built at startup, before this update finished
+        if hasattr(self, "apps_page"):
+            self.apps_page.reload_from_cache()
+
     def _on_catalog_failed(self, error: str) -> None:
         print(f"[main] The catalog has not been updated: {error}")
+
+    def _on_catalog_thread_finished(self) -> None:
+        """Cleans up after the loader and finishes a queued refresh."""
+        if self.sender() is not self._catalog_loader:
+            return
+
+        self._catalog_loader = None
+
+        if self._closing:
+            return
+
+        if self._catalog_refresh_pending:
+            self._catalog_refresh_pending = False
+            self._refresh_catalog(force=True)
+            return
+
+        if hasattr(self, "apps_page"):
+            self.apps_page.finish_refresh()
 
     # ------------------------------------------------------------------
     # Cache
@@ -649,8 +723,22 @@ class MainWindow(QMainWindow):
         if answer != QMessageBox.StandardButton.Yes:
             return
 
+        # A running loader would immediately fill the cache again
+        if self._catalog_loader is not None and self._catalog_loader.isRunning():
+            print("[main] Stopping the catalog loader before clearing the cache")
+            self._catalog_loader.cancel()
+            if not self._catalog_loader.wait(5000):
+                print("[main] The loader did not stop — terminating it")
+                self._catalog_loader.terminate()
+                self._catalog_loader.wait(1000)
+
+        self._catalog_refresh_pending = False
+
         ok_json = clear_cache()
         ok_assets = clear_assets_cache()
+
+        # Show the built-in catalog again instead of stale cards
+        self.apps_page.reload_from_cache()
 
         if ok_json and ok_assets:
             QMessageBox.information(
@@ -689,19 +777,8 @@ class MainWindow(QMainWindow):
         text_dim = "#444444" if is_light else "#b8b8b8"
         text_soft = "#3a3a3a" if is_light else "#c8c8c8"
 
-        # Font Size and Compact Mode
+        # Font Size
         font_size = self.user_settings.get("font_size", 14)
-        compact = self.user_settings.get("compact_mode", False)
-
-        # Card Sizes and Indents: Standard or Compact
-        if compact:
-            card_padding = "8px 12px"
-            card_spacing = "6px"
-            icon_size = "48px"
-        else:
-            card_padding = "12px 16px"
-            card_spacing = "10px"
-            icon_size = "64px"
 
         styles = """
             QMainWindow, QWidget {
@@ -709,6 +786,10 @@ class MainWindow(QMainWindow):
                 color: __TEXT_NORMAL__;
                 font-family: "Segoe UI", "Inter", sans-serif;
                 font-size: __FONT_SIZE__px;
+            }
+
+            QLabel {
+                background-color: transparent;
             }
 
             #Sidebar {
@@ -1096,3 +1177,89 @@ class MainWindow(QMainWindow):
         b = int(b1 * (1 - alpha) + b2 * alpha)
 
         return rgb_to_hex(r, g, b)
+
+    # ------------------------------------------------------------------
+    # Shutdown
+    # ------------------------------------------------------------------
+    def closeEvent(self, event) -> None:
+        """
+        Closes the window only after background workers have stopped.
+
+        Destroying a running QThread aborts the whole process, so the window
+        is hidden immediately and the application quits when the workers are
+        done (or after a safety timeout).
+        """
+        if self._closing:
+            event.accept()
+            return
+
+        self._closing = True
+
+        workers = [
+            worker
+            for worker in (self._checker, self._catalog_loader)
+            if worker is not None and self._worker_is_running(worker)
+        ]
+
+        if not workers:
+            event.accept()
+            return
+
+        print(f"[main] Waiting for {len(workers)} background task(s) before exit")
+        event.ignore()
+        self.hide()
+
+        self._shutdown_timer = QTimer(self)
+        self._shutdown_timer.setInterval(100)
+        self._shutdown_timer.timeout.connect(self._poll_shutdown)
+        self._shutdown_timer.start()
+
+        QTimer.singleShot(15000, self._force_shutdown)
+
+    @staticmethod
+    def _worker_is_running(worker) -> bool:
+        """isRunning() that tolerates an already-deleted C++ object."""
+        try:
+            return worker.isRunning()
+        except RuntimeError:
+            return False
+
+    def _poll_shutdown(self) -> None:
+        workers = [
+            worker
+            for worker in (self._checker, self._catalog_loader)
+            if worker is not None and self._worker_is_running(worker)
+        ]
+        if not workers:
+            self._finish_shutdown()
+
+    def _force_shutdown(self) -> None:
+        """Safety net: stop workers that ignored cancellation."""
+        for worker in (self._checker, self._catalog_loader):
+            if worker is None or not self._worker_is_running(worker):
+                continue
+
+            print("[main] Background task did not stop in time — terminating")
+            cancel = getattr(worker, "cancel", None)
+            if callable(cancel):
+                try:
+                    cancel()
+                except Exception:
+                    pass
+
+            try:
+                worker.terminate()
+                worker.wait(1000)
+            except RuntimeError:
+                pass
+
+        self._finish_shutdown()
+
+    def _finish_shutdown(self) -> None:
+        if self._shutdown_timer is not None:
+            self._shutdown_timer.stop()
+            self._shutdown_timer = None
+
+        app = QApplication.instance()
+        if app is not None:
+            app.quit()

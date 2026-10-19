@@ -18,10 +18,12 @@ from PySide6.QtWidgets import (
     QPushButton,
     QFrame,
     QScrollArea,
+    QMessageBox,
 )
 
 from app.core.cache_manager import find_icon, find_screenshot
 from app.core.translator import t
+from app.ui.url_opener import open_external_url
 
 
 ICONS_DIR = Path(__file__).parent.parent / "resources" / "icons"
@@ -69,18 +71,18 @@ class AppDetailsPage(QWidget):
         outer.addWidget(top_bar)
 
         # ---- Scrollable content area ----
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setObjectName("DetailsScroll")
-        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setObjectName("DetailsScroll")
+        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
 
         self.content = QWidget()
         self.content_layout = QVBoxLayout(self.content)
         self.content_layout.setContentsMargins(40, 20, 40, 40)
         self.content_layout.setSpacing(24)
 
-        scroll.setWidget(self.content)
-        outer.addWidget(scroll, stretch=1)
+        self.scroll.setWidget(self.content)
+        outer.addWidget(self.scroll, stretch=1)
 
     # ------------------------------------------------------------------
     # Filling the page with data
@@ -88,6 +90,9 @@ class AppDetailsPage(QWidget):
     def set_app_data(self, data: dict) -> None:
         """Fills the page with the program data. Clears previous content."""
         self._current_data = data
+
+        # A new program always starts from the top, not from the previous scroll
+        self.scroll.verticalScrollBar().setValue(0)
 
         # Remove all widgets from the old content
         self._clear_layout(self.content_layout)
@@ -99,7 +104,9 @@ class AppDetailsPage(QWidget):
         long_desc = data.get("long_description") or data.get("description")
         if long_desc:
             self.content_layout.addWidget(
-                self._build_section(t("details.section.description"), long_desc)
+                self._build_section(
+                    t("details.section.description"), str(long_desc)
+                )
             )
 
         # ---- Specs (table) ----
@@ -108,17 +115,23 @@ class AppDetailsPage(QWidget):
             self.content_layout.addWidget(specs)
 
         # ---- Features ----
-        features = data.get("features", [])
-        if features:
+        features = data.get("features") or []
+        if isinstance(features, list) and features:
             self.content_layout.addWidget(
-                self._build_section(t("details.section.features"), None, features)
+                self._build_section(
+                    t("details.section.features"), None, [str(x) for x in features]
+                )
             )
 
         # ---- System requirements ----
-        requirements = data.get("requirements", [])
-        if requirements:
+        requirements = data.get("requirements") or []
+        if isinstance(requirements, list) and requirements:
             self.content_layout.addWidget(
-                self._build_section(t("details.section.requirements"), None, requirements)
+                self._build_section(
+                    t("details.section.requirements"),
+                    None,
+                    [str(x) for x in requirements],
+                )
             )
 
         # ---- Screenshots ----
@@ -129,11 +142,11 @@ class AppDetailsPage(QWidget):
         except Exception:
             show_screenshots = True
 
-        screenshots = data.get("screenshots", [])
-        if screenshots and show_screenshots:
-            self.content_layout.addWidget(
-                self._build_screenshots(screenshots)
-            )
+        screenshots = data.get("screenshots") or []
+        if isinstance(screenshots, list) and screenshots and show_screenshots:
+            screenshots_block = self._build_screenshots(screenshots)
+            if screenshots_block is not None:
+                self.content_layout.addWidget(screenshots_block)
 
         # Stretch at the end
         self.content_layout.addStretch(1)
@@ -224,9 +237,9 @@ class AppDetailsPage(QWidget):
         download_buttons = self._get_download_buttons(data)
 
         for btn_info in download_buttons:
-            label = btn_info.get("label", t("details.download"))
-            url = btn_info.get("url", "")
-            is_primary = btn_info.get("primary", False)
+            label = str(btn_info.get("label") or t("details.download"))
+            url = str(btn_info.get("url") or "")
+            is_primary = bool(btn_info.get("primary", False))
             btn_type = btn_info.get("type", "download")
 
             if not url:
@@ -244,7 +257,7 @@ class AppDetailsPage(QWidget):
 
         # "Open website" button — separately
         website = data.get("website", "")
-        if website:
+        if isinstance(website, str) and website:
             site_btn = QPushButton(t("details.open_website"))
             site_btn.setObjectName("SecondaryButton")
             site_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -336,8 +349,13 @@ class AppDetailsPage(QWidget):
 
         return section
 
-    def _build_screenshots(self, screenshots: list) -> QWidget:
-        """Block with screenshots."""
+    def _build_screenshots(self, screenshots: list) -> QWidget | None:
+        """
+        Block with screenshots.
+
+        Returns None when no image file is available, so an empty
+        "Screenshots" section is never shown.
+        """
 
         section = QFrame()
         section.setObjectName("DetailsSection")
@@ -351,22 +369,30 @@ class AppDetailsPage(QWidget):
         layout.addWidget(header)
 
         # Try two sources: "screenshots" (names) and "screenshots_urls" (URLs)
-        names = self._current_data.get("screenshots", [])
-        urls = self._current_data.get("screenshots_urls", [])
+        names = self._current_data.get("screenshots") or []
+        urls = self._current_data.get("screenshots_urls") or []
+
+        if not isinstance(names, list):
+            names = []
+        if not isinstance(urls, list):
+            urls = []
+
+        added = 0
 
         # First — by names (our screenshots)
         for name in names:
-            shot_path = find_screenshot(self._current_data, name)
+            shot_path = find_screenshot(self._current_data, str(name))
             if shot_path is None:
                 # Fallback: built-in screenshot
-                builtin = SCREENSHOTS_DIR / name
+                builtin = SCREENSHOTS_DIR / Path(str(name)).name
                 if builtin.exists():
                     shot_path = builtin
 
             if shot_path is None:
                 continue
 
-            self._add_screenshot_to_layout(shot_path, layout)
+            if self._add_screenshot_to_layout(shot_path, layout):
+                added += 1
 
         # Then — by external URLs (indices)
         for idx in range(len(urls)):
@@ -374,19 +400,23 @@ class AppDetailsPage(QWidget):
             if shot_path is None:
                 continue
 
-            self._add_screenshot_to_layout(shot_path, layout)
+            if self._add_screenshot_to_layout(shot_path, layout):
+                added += 1
+
+        if added == 0:
+            return None
 
         return section
 
-    def _add_screenshot_to_layout(self, shot_path: Path, layout) -> None:
+    def _add_screenshot_to_layout(self, shot_path: Path, layout) -> bool:
         """Loads an image, scales to 600px wide, adds it to the layout."""
         if not shot_path.exists():
-            return
+            return False
 
         pixmap = QPixmap(str(shot_path))
         if pixmap.isNull():
             print(f"[details] Broken screenshot: {shot_path.name}")
-            return
+            return False
 
         scaled = pixmap.scaledToWidth(
             600,
@@ -397,6 +427,7 @@ class AppDetailsPage(QWidget):
         img_label.setPixmap(scaled)
         img_label.setObjectName("Screenshot")
         layout.addWidget(img_label)
+        return True
 
     def _get_download_buttons(self, data: dict) -> list[dict]:
         """
@@ -460,7 +491,10 @@ class AppDetailsPage(QWidget):
     # Handlers
     # ------------------------------------------------------------------
     def _open_website(self, url: str) -> None:
-        """Opens the website in the system browser."""
-        from PySide6.QtGui import QDesktopServices
-        from PySide6.QtCore import QUrl
-        QDesktopServices.openUrl(QUrl(url))
+        """Opens the website in the system browser (http/https only)."""
+        if not open_external_url(url):
+            QMessageBox.warning(
+                self,
+                t("common.error"),
+                t("details.bad_url"),
+            )

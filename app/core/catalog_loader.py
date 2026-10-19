@@ -16,17 +16,24 @@ Security:
 
 import json
 import os
+import threading
 import urllib.error
 import urllib.request
+from email.utils import formatdate
 from pathlib import Path
 
 from PySide6.QtCore import QThread, Signal
 
+from app import __version__
 from app.core.cache_manager import (
+    CACHE_APPS,
+    CACHE_ICONS,
+    CACHE_SCREENSHOTS,
+    get_cache_apps_dir,
     set_last_update_info,
     should_update_now,
-    get_cache_apps_dir,
 )
+from app.core.thread_registry import register, unregister
 from app.core.user_settings import load_user_settings
 
 
@@ -52,11 +59,42 @@ RAW_SCREENSHOTS_BASE = (
     f"/{GITHUB_BRANCH}/{SCREENSHOTS_PATH_IN_REPO}/"
 )
 
-# Where to save the cache — %APPDATA%\OWINP\cache\
-APPDATA = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
-CACHE_ROOT = APPDATA / "OWINP" / "cache"
-CACHE_ICONS = CACHE_ROOT / "icons"              # Icons (flat, shared by all languages)
-CACHE_SCREENSHOTS = CACHE_ROOT / "screenshots"  # Screenshots (flat, shared by all languages)
+# Refuse unexpectedly huge "images" (the biggest real icon is ~5 MB)
+MAX_ASSET_BYTES = 25 * 1024 * 1024
+
+USER_AGENT = f"OWINP/{__version__} (+https://github.com/idlessfun/owinp)"
+
+
+def _atomic_write_bytes(target: Path, content: bytes) -> None:
+    """
+    Writes bytes to `target` atomically.
+
+    A temporary file is written first, then renamed over the target, so an
+    interrupted download can never leave a truncated JSON card or image.
+    """
+    target.parent.mkdir(parents=True, exist_ok=True)
+    tmp = target.with_name(
+        f"{target.name}.{os.getpid()}.{threading.get_ident()}.tmp"
+    )
+
+    try:
+        with open(tmp, "wb") as f:
+            f.write(content)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, target)
+    finally:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def _basename(value: object) -> str:
+    """Returns the bare file name of an arbitrary (possibly remote) value."""
+    if not isinstance(value, str):
+        return ""
+    return value.strip().replace("\\", "/").rsplit("/", 1)[-1].strip()
 
 
 class CatalogLoader(QThread):
@@ -78,61 +116,17 @@ class CatalogLoader(QThread):
         """
         super().__init__()
         self.force = force
+        self._cancelled = False
+
+    def cancel(self) -> None:
+        """Asks the worker to stop after the current file."""
+        self._cancelled = True
 
     def run(self) -> None:
         """Main thread method."""
+        register(self)
         try:
-            # Get the current language
-            try:
-                settings = load_user_settings()
-                lang = settings.get("language", "en")
-            except Exception:
-                lang = "en"
-
-            # Throttling: check time AND language
-            if not self.force:
-                if not should_update_now(lang):
-                    print("[catalog] Catalog update skipped (throttling)")
-                    self.finished_ok.emit(0)
-                    return
-
-            print(f"[catalog] Checking catalog updates (language: {lang})...")
-
-            # 1. Create cache folders if they don't exist
-            get_cache_apps_dir(lang)  # creates cache/apps/<lang>/
-            CACHE_ICONS.mkdir(parents=True, exist_ok=True)
-            CACHE_SCREENSHOTS.mkdir(parents=True, exist_ok=True)
-
-            # 2. Get file list from app/apps/<lang>/ via GitHub API
-            files = self._fetch_language_files(lang)
-            if not files:
-                print(f"[catalog] No files found for language '{lang}'")
-                # Still save the language + time, so we don't retry every minute
-                set_last_update_info(lang)
-                self.finished_ok.emit(0)
-                return
-
-            # 3. Download each .json file + assets
-            downloaded = 0
-            for filename in files:
-                if not filename.endswith(".json"):
-                    continue
-
-                data = self._download_json(lang, filename)
-                if data is None:
-                    continue
-
-                downloaded += 1
-                self._download_assets(data)
-
-            # 4. Clean up outdated files (only for current language)
-            self._cleanup_stale_files(lang, files)
-
-            # 5. Notify once
-            print(f"[catalog] Updated files: {downloaded}")
-            set_last_update_info(lang)
-            self.finished_ok.emit(downloaded)
-
+            self._run()
         except urllib.error.HTTPError as e:
             msg = f"HTTP {e.code}: {e.reason}"
             print(f"[catalog] Error: {msg}")
@@ -147,6 +141,72 @@ class CatalogLoader(QThread):
             msg = f"Unknown error: {e}"
             print(f"[catalog] Error: {msg}")
             self.failed.emit(msg)
+
+        finally:
+            unregister(self)
+
+    def _run(self) -> None:
+        """Actual work, separated so that run() can wrap it with error handling."""
+        # Get the current language
+        try:
+            settings = load_user_settings()
+            lang = settings.get("language", "en")
+        except Exception:
+            lang = "en"
+
+        # Throttling: check time AND language
+        if not self.force:
+            if not should_update_now(lang):
+                print("[catalog] Catalog update skipped (throttling)")
+                self.finished_ok.emit(0)
+                return
+
+        print(f"[catalog] Checking catalog updates (language: {lang})...")
+
+        # 1. Create cache folders if they don't exist
+        get_cache_apps_dir(lang)  # creates cache/apps/<lang>/
+        CACHE_ICONS.mkdir(parents=True, exist_ok=True)
+        CACHE_SCREENSHOTS.mkdir(parents=True, exist_ok=True)
+
+        # 2. Get file list from app/apps/<lang>/ via GitHub API
+        files = self._fetch_language_files(lang)
+        if not files:
+            print(f"[catalog] No files found for language '{lang}'")
+            # Still save the language + time, so we don't retry every minute
+            set_last_update_info(lang)
+            self.finished_ok.emit(0)
+            return
+
+        # 3. Download each .json file + assets
+        downloaded = 0
+        for filename in files:
+            if self._cancelled:
+                print("[catalog] Cancelled by the user")
+                self.finished_ok.emit(downloaded)
+                return
+
+            if not filename.endswith(".json"):
+                continue
+
+            data = self._download_json(lang, filename)
+            if data is None:
+                continue
+
+            downloaded += 1
+            self._download_assets(data)
+
+        if self._cancelled:
+            print("[catalog] Cancelled by the user")
+            self.finished_ok.emit(downloaded)
+            return
+
+        # 4. Clean up outdated files (only for the current language)
+        self._cleanup_stale_files(lang, files)
+
+        # 5. Notify once
+        print(f"[catalog] Updated files: {downloaded}")
+        set_last_update_info(lang)
+        self.finished_ok.emit(downloaded)
 
     # ------------------------------------------------------------------
     # Internal methods
@@ -166,7 +226,7 @@ class CatalogLoader(QThread):
         req = urllib.request.Request(
             api_url,
             headers={
-                "User-Agent": "OWINP/0.1",
+                "User-Agent": USER_AGENT,
                 "Accept": "application/vnd.github+json",
             },
         )
@@ -195,12 +255,16 @@ class CatalogLoader(QThread):
         and saves it to cache/apps/<lang>/. Returns a dict with the data on success,
         otherwise None.
         """
-        url = RAW_APPS_BASE + f"{lang}/{filename}"
+        safe_name = _basename(filename)
+        if not safe_name.endswith(".json"):
+            return None
+
+        url = RAW_APPS_BASE + f"{lang}/{safe_name}"
 
         try:
             req = urllib.request.Request(
                 url,
-                headers={"User-Agent": "OWINP/0.1"},
+                headers={"User-Agent": USER_AGENT},
             )
             with urllib.request.urlopen(req, timeout=10) as response:
                 raw = response.read().decode("utf-8")
@@ -208,30 +272,30 @@ class CatalogLoader(QThread):
             # Validation: is it valid JSON?
             data = json.loads(raw)
             if not isinstance(data, dict):
-                print(f"[catalog] {filename} — not a JSON object, skipped")
+                print(f"[catalog] {safe_name} — not a JSON object, skipped")
                 return None
 
             # Check required fields
-            if "name" not in data or "id" not in data:
-                print(f"[catalog] {filename} — missing id/name, skipped")
+            if not isinstance(data.get("id"), str) or not data["id"].strip():
+                print(f"[catalog] {safe_name} — missing id, skipped")
+                return None
+            if not isinstance(data.get("name"), str) or not data["name"].strip():
+                print(f"[catalog] {safe_name} — missing name, skipped")
                 return None
 
-            # Save to cache/<lang>/
-            target_dir = get_cache_apps_dir(lang)
-            target = target_dir / filename
-            with open(target, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-                f.flush()
-                os.fsync(f.fileno())   # ensure data is written to disk
+            # Save to cache/<lang>/ atomically
+            target = get_cache_apps_dir(lang) / safe_name
+            payload = json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
+            _atomic_write_bytes(target, payload)
 
-            print(f"[catalog] Downloaded ({lang}): {filename}")
+            print(f"[catalog] Downloaded ({lang}): {safe_name}")
             return data
 
-        except json.JSONDecodeError:
-            print(f"[catalog] {filename} — broken JSON, skipped")
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            print(f"[catalog] {safe_name} — broken JSON, skipped")
             return None
-        except Exception as e:
-            print(f"[catalog] {filename} — error: {e}")
+        except (urllib.error.URLError, OSError) as e:
+            print(f"[catalog] {safe_name} — error: {e}")
             return None
 
     def _download_assets(self, data: dict) -> None:
@@ -243,35 +307,46 @@ class CatalogLoader(QThread):
         - If only `icon` (file name) is present, construct the URL from our GitHub
         - Similarly for `screenshots` and `screenshots_urls`
         """
-        app_id = data.get("id", "unknown")
+        app_id = _basename(data.get("id")) or "unknown"
 
         # --- Icon ---
         icon_url = data.get("icon_url")
         icon_name = data.get("icon")
 
         # Security: Blocking Unsafe URLs
-        if icon_url and not icon_url.lower().startswith("https://"):
+        if icon_url and not str(icon_url).lower().startswith("https://"):
             print(f"[catalog] Insecure icon_url (not HTTPS): {icon_url}")
             icon_url = None
 
+        if self._cancelled:
+            return
+
         if icon_url:
-            ext = self._extract_extension(icon_url)
+            ext = self._extract_extension(str(icon_url))
             local_name = f"{app_id}{ext}"
-            self._download_image(icon_url, CACHE_ICONS / local_name)
+            self._download_image(str(icon_url), CACHE_ICONS / local_name)
         elif icon_name:
             # Security: We only take the filename (without paths)
-            safe_name = Path(icon_name).name
-            url = RAW_ICONS_BASE + safe_name
-            self._download_image(url, CACHE_ICONS / safe_name)
+            safe_name = _basename(icon_name)
+            if safe_name:
+                url = RAW_ICONS_BASE + safe_name
+                self._download_image(url, CACHE_ICONS / safe_name)
 
         # --- Screenshots ---
-        screenshot_urls = data.get("screenshots_urls", [])
-        screenshot_names = data.get("screenshots", [])
+        screenshot_urls = data.get("screenshots_urls") or []
+        screenshot_names = data.get("screenshots") or []
+
+        if not isinstance(screenshot_urls, list):
+            screenshot_urls = []
+        if not isinstance(screenshot_names, list):
+            screenshot_names = []
 
         # External URLs
         for i, url in enumerate(screenshot_urls):
+            if self._cancelled:
+                return
             # Security: HTTPS Only
-            if not url.lower().startswith("https://"):
+            if not isinstance(url, str) or not url.lower().startswith("https://"):
                 print(f"[catalog] Insecure screenshots_urls (not HTTPS): {url}")
                 continue
             ext = self._extract_extension(url)
@@ -280,8 +355,12 @@ class CatalogLoader(QThread):
 
         # File names from my repo
         for name in screenshot_names:
+            if self._cancelled:
+                return
             # Security: We only accept the filename
-            safe_name = Path(name).name
+            safe_name = _basename(name)
+            if not safe_name:
+                continue
             url = RAW_SCREENSHOTS_BASE + safe_name
             self._download_image(url, CACHE_SCREENSHOTS / safe_name)
 
@@ -289,24 +368,40 @@ class CatalogLoader(QThread):
         """
         Downloads a single image and saves it to `target`.
         Returns `True` if successful.
+
+        Sends If-Modified-Since for files that are already cached, so an
+        unchanged image costs a tiny 304 response instead of a full download.
         """
         try:
-            req = urllib.request.Request(
-                url,
-                headers={"User-Agent": "OWINP/0.1"},
-            )
-            with urllib.request.urlopen(req, timeout=10) as response:
-                content = response.read()
+            headers = {"User-Agent": USER_AGENT}
+
+            try:
+                stat = target.stat()
+                if stat.st_size > 0:
+                    headers["If-Modified-Since"] = formatdate(
+                        stat.st_mtime, usegmt=True
+                    )
+            except OSError:
+                pass
+
+            req = urllib.request.Request(url, headers=headers)
+            try:
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    content = response.read(MAX_ASSET_BYTES + 1)
+            except urllib.error.HTTPError as e:
+                if e.code == 304:
+                    return True
+                raise
 
             if not content or len(content) < 20:
                 print(f"[catalog] The image is empty: {url}")
                 return False
 
-            with open(target, "wb") as f:
-                f.write(content)
-                f.flush()
-                os.fsync(f.fileno())
+            if len(content) > MAX_ASSET_BYTES:
+                print(f"[catalog] The image is too large, skipped: {url}")
+                return False
 
+            _atomic_write_bytes(target, content)
             print(f"[catalog] Downloaded image: {target.name}")
             return True
 
@@ -318,11 +413,13 @@ class CatalogLoader(QThread):
         """
         Removes cache files that no longer exist on GitHub for the given language.
 
-        Only cleans the <lang> folder. Icons/screenshots cleanup — flat
-        (uses all languages to decide which assets are still used).
+        Only cleans the <lang> folder. Icons/screenshots are shared between
+        languages, so they are kept when any cached card references them.
         """
         # 1. Collect a set of actual names
-        actual_names = {name for name in actual_files if name.endswith(".json")}
+        actual_names = {
+            _basename(name) for name in actual_files if name.endswith(".json")
+        }
 
         # 2. Remove outdated JSON from the language folder
         cache_dir = get_cache_apps_dir(lang)
@@ -333,57 +430,114 @@ class CatalogLoader(QThread):
                 try:
                     cache_file.unlink()
                     removed_json += 1
-                except Exception as e:
+                except OSError as e:
                     print(f"[catalog] Failed to remove {cache_file.name}: {e}")
 
-        # 3. Collect actual ids from ALL languages (to keep shared assets)
-        actual_ids = set()
-        cache_apps_root = CACHE_ROOT / "apps"
-        if cache_apps_root.exists():
-            for lang_dir in cache_apps_root.iterdir():
-                if not lang_dir.is_dir():
-                    continue
-                for cache_file in lang_dir.glob("*.json"):
-                    try:
-                        with open(cache_file, "r", encoding="utf-8") as f:
-                            data = json.load(f)
-                        if "id" in data:
-                            actual_ids.add(data["id"])
-                    except Exception:
-                        pass
+        # 3. Remove temporary files left behind by an interrupted write
+        for tmp_file in cache_dir.glob("*.tmp"):
+            try:
+                tmp_file.unlink()
+            except OSError:
+                pass
 
-        # 4. Remove icons that are not in any language
-        removed_icons = 0
-        if CACHE_ICONS.exists():
-            for icon_file in CACHE_ICONS.glob("*"):
-                if icon_file.stem not in actual_ids:
-                    print(f"[catalog] Removing outdated icon: {icon_file.name}")
-                    try:
-                        icon_file.unlink()
-                        removed_icons += 1
-                    except Exception:
-                        pass
+        # 4. Collect all asset names that any cached card still references
+        referenced_icons, referenced_shots = self._collect_referenced_assets()
 
-        # 5. Remove screenshots that are not in any language
-        removed_shots = 0
-        if CACHE_SCREENSHOTS.exists():
-            for shot_file in CACHE_SCREENSHOTS.glob("*"):
-                stem = shot_file.stem
-                if "_" in stem:
-                    shot_id = stem.rsplit("_", 1)[0]
-                    if shot_id not in actual_ids:
-                        print(f"[catalog] Removing outdated screenshot: {shot_file.name}")
-                        try:
-                            shot_file.unlink()
-                            removed_shots += 1
-                        except Exception:
-                            pass
+        # 4. Remove icons that are not referenced by any language
+        removed_icons = self._remove_unreferenced(CACHE_ICONS, referenced_icons)
+
+        # 5. Remove screenshots that are not referenced by any language
+        removed_shots = self._remove_unreferenced(
+            CACHE_SCREENSHOTS, referenced_shots
+        )
 
         if removed_json or removed_icons or removed_shots:
             print(
                 f"[catalog] Cache cleanup: "
                 f"JSON={removed_json}, icons={removed_icons}, screenshots={removed_shots}"
             )
+
+    @staticmethod
+    def _remove_unreferenced(folder: Path, referenced: set[str]) -> int:
+        """Deletes regular files in `folder` that are not in `referenced`."""
+        removed = 0
+        if not folder.is_dir():
+            return removed
+
+        for asset in folder.iterdir():
+            if not asset.is_file():
+                continue
+            # Temporary files from an interrupted write are always removed
+            if asset.name.endswith(".tmp"):
+                try:
+                    asset.unlink()
+                except OSError:
+                    pass
+                continue
+
+            if asset.name in referenced:
+                continue
+
+            print(f"[catalog] Removing outdated asset: {asset.name}")
+            try:
+                asset.unlink()
+                removed += 1
+            except OSError:
+                pass
+
+        return removed
+
+    def _collect_referenced_assets(self) -> tuple[set[str], set[str]]:
+        """
+        Scans every cached JSON card (all languages) and returns
+        (referenced icon names, referenced screenshot names).
+        """
+        icons: set[str] = set()
+        shots: set[str] = set()
+
+        if not CACHE_APPS.is_dir():
+            return icons, shots
+
+        for lang_dir in CACHE_APPS.iterdir():
+            if not lang_dir.is_dir():
+                continue
+
+            for card in lang_dir.glob("*.json"):
+                try:
+                    with open(card, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                except (OSError, json.JSONDecodeError):
+                    continue
+
+                if not isinstance(data, dict):
+                    continue
+
+                app_id = _basename(data.get("id"))
+
+                icon_url = data.get("icon_url")
+                icon_name = data.get("icon")
+
+                if isinstance(icon_url, str) and icon_url and app_id:
+                    icons.add(f"{app_id}{self._extract_extension(icon_url)}")
+                if isinstance(icon_name, str) and icon_name:
+                    icons.add(_basename(icon_name))
+
+                screenshots = data.get("screenshots") or []
+                if isinstance(screenshots, list):
+                    for name in screenshots:
+                        safe_name = _basename(name)
+                        if safe_name:
+                            shots.add(safe_name)
+
+                screenshots_urls = data.get("screenshots_urls") or []
+                if isinstance(screenshots_urls, list) and app_id:
+                    for i, url in enumerate(screenshots_urls):
+                        if isinstance(url, str) and url:
+                            shots.add(
+                                f"{app_id}_{i}{self._extract_extension(url)}"
+                            )
+
+        return icons, shots
 
     @staticmethod
     def _extract_extension(url: str) -> str:

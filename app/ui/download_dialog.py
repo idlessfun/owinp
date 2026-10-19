@@ -40,6 +40,7 @@ class DownloadDialog(QDialog):
         self.app_data = app_data
         self.save_path = save_path
         self.downloader: Downloader | None = None
+        self._close_pending = False
 
         self.setWindowTitle(
             t("download.title", name=app_data.get("name", ""))
@@ -196,6 +197,7 @@ class DownloadDialog(QDialog):
         self.downloader.finished_ok.connect(self._on_finished)
         self.downloader.cancelled.connect(self._on_cancelled)
         self.downloader.failed.connect(self._on_failed)
+        self.downloader.finished.connect(self._on_thread_finished)
         self.downloader.start()
 
         # Log to console
@@ -206,7 +208,7 @@ class DownloadDialog(QDialog):
     def _on_progress(self, downloaded: int, total: int, speed: float) -> None:
         """Updates the progress bar and texts."""
         # Protection: if the dialog is already closing, ignore
-        if self.downloader and self.downloader._closing:
+        if self.downloader and self.downloader.is_closing:
             return
 
         if total > 0:
@@ -253,7 +255,7 @@ class DownloadDialog(QDialog):
             print(f"[download] Auto-run error: {e}")
 
     def _on_failed(self, error: str) -> None:
-        if self.downloader and self.downloader._closing:
+        if self.downloader and self.downloader.is_closing:
             return
         print(f"[download] Error: {error}")
         QMessageBox.critical(
@@ -265,16 +267,30 @@ class DownloadDialog(QDialog):
 
     def _on_cancel(self) -> None:
         """The "Cancel" button."""
-        if self.downloader and self.downloader.isRunning():
-            self.downloader.mark_closing()
-            self.downloader.cancel()
-            self.downloader.wait(3000)
-        self.reject()
+        if self.downloader is None or not self.downloader.isRunning():
+            self.reject()
+            return
+
+        if self._close_pending:
+            return
+
+        print("[download] Cancelling...")
+        self._close_pending = True
+        self.cancel_btn.setEnabled(False)
+        self.status_label.setText(t("download.cancelling"))
+        # The dialog stays open until the worker has stopped; blocking the
+        # UI thread with wait() here used to freeze the whole application.
+        self.downloader.cancel()
 
     def _on_cancelled(self) -> None:
         """The thread reported that the cancellation is done."""
         print("[download] Cancelled by the user")
         self.reject()
+
+    def _on_thread_finished(self) -> None:
+        """The QThread is fully stopped — now it is safe to close the dialog."""
+        if self._close_pending:
+            self.reject()
 
     # ------------------------------------------------------------------
     # Swap buttons after completion
@@ -350,13 +366,18 @@ class DownloadDialog(QDialog):
     def closeEvent(self, event) -> None:
         """
         Called when the window is closed (X button, Alt+F4).
-        Properly stops the download thread.
+
+        The worker is cancelled, but the dialog is not destroyed until the
+        thread has actually finished: destroying a running QThread crashes
+        the whole process.
         """
-        if self.downloader and self.downloader.isRunning():
+        if self.downloader is not None and self.downloader.isRunning():
             print("[download] Dialog is closing — cancelling download")
+            self._close_pending = True
             self.downloader.mark_closing()
             self.downloader.cancel()
-            # Wait for the thread to finish (up to 3 seconds)
-            if not self.downloader.wait(3000):
-                print("[download] The thread did not finish in 3 sec — forcing")
+            # QThread.finished -> _on_thread_finished() will close the dialog
+            event.ignore()
+            return
+
         event.accept()

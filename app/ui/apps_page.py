@@ -7,8 +7,9 @@ Inside — QStackedWidget with two states:
 """
 
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QStandardPaths, Qt, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QWidget,
@@ -21,13 +22,14 @@ from PySide6.QtWidgets import (
     QStackedWidget,
     QLineEdit,
     QComboBox,
+    QFileDialog,
 )
 
 from app.core.app_loader import load_all_apps
 from app.core.cache_manager import find_icon
 from app.core.translator import t
+from app.core.user_settings import load_user_settings
 from app.ui.app_details_page import AppDetailsPage
-from app.core.catalog_loader import CatalogLoader
 
 
 ICONS_DIR = Path(__file__).parent.parent / "resources" / "icons"
@@ -36,14 +38,22 @@ ICONS_DIR = Path(__file__).parent.parent / "resources" / "icons"
 class AppsPage(QWidget):
     """The "Programs" page — list, search, filter, details."""
 
+    # Emitted when the user asks for a fresh catalog from GitHub.
+    # The main window owns the only CatalogLoader, so two refreshes can
+    # never write to the cache at the same time.
+    refresh_requested = Signal()
+
     def __init__(self) -> None:
         super().__init__()
 
         # Load all programs once at startup
-        self.all_apps: list[dict] = load_all_apps()
+        self.all_apps: list[dict] = [
+            app for app in load_all_apps() if isinstance(app, dict)
+        ]
         self.filtered_apps: list[dict] = list(self.all_apps)
-        # For the "Refresh" button
-        self._reload_loader: CatalogLoader | None = None
+
+        settings = load_user_settings()
+        self.compact_mode: bool = bool(settings.get("compact_mode", False))
 
         # Outer layout
         outer = QVBoxLayout(self)
@@ -69,6 +79,7 @@ class AppsPage(QWidget):
         self.stack.setCurrentIndex(0)
 
         # Initial fill of the list
+        self._populate_categories()
         self._apply_filters()
 
     # ------------------------------------------------------------------
@@ -110,15 +121,8 @@ class AppsPage(QWidget):
         self.category_combo = QComboBox()
         self.category_combo.setObjectName("CategoryCombo")
         self.category_combo.setFixedWidth(220)
-        self.category_combo.addItem(t("apps.all_categories"))
-        # Fill with categories from JSON
-        categories = sorted({
-            app.get("category", "").strip()
-            for app in self.all_apps
-            if app.get("category")
-        })
-        self.category_combo.addItems(categories)
-        self.category_combo.currentTextChanged.connect(self._apply_filters)
+        self.category_combo.addItem(t("apps.all_categories"), None)
+        self.category_combo.currentIndexChanged.connect(self._apply_filters)
         toolbar.addWidget(self.category_combo)
 
         # Counter
@@ -154,26 +158,29 @@ class AppsPage(QWidget):
     def _apply_filters(self) -> None:
         """Applies search and category filter, then redraws the list."""
         query = self.search_input.text().strip().lower()
-        category = self.category_combo.currentText()
-        all_categories = t("apps.all_categories")
+        category = self.category_combo.currentData()
 
         # Filter
         result = []
         for app in self.all_apps:
-            # --- By category ---
-            if category != all_categories:
-                if app.get("category", "") != category:
-                    continue
+            if not isinstance(app, dict):
+                continue
+
+            # --- By category (stored as item data, not display text) ---
+            if category and app.get("category", "") != category:
+                continue
 
             # --- By search ---
             if query:
                 haystack_parts = [
-                    app.get("name", ""),
-                    app.get("description", ""),
-                    app.get("developer", ""),
+                    str(app.get("name", "")),
+                    str(app.get("description", "")),
+                    str(app.get("developer", "")),
                 ]
                 # Tags — it's a list, add all
-                haystack_parts.extend(app.get("tags", []))
+                tags = app.get("tags", [])
+                if isinstance(tags, list):
+                    haystack_parts.extend(str(tag) for tag in tags)
                 haystack = " ".join(haystack_parts).lower()
 
                 if query not in haystack:
@@ -208,7 +215,7 @@ class AppsPage(QWidget):
             self.cards_layout.addStretch(1)
         else:
             for app_data in self.filtered_apps:
-                card = AppCard(app_data)
+                card = AppCard(app_data, compact=self.compact_mode)
                 card.clicked.connect(self._show_details)
                 self.cards_layout.addWidget(card)
             self.cards_layout.addStretch(1)
@@ -218,66 +225,70 @@ class AppsPage(QWidget):
             t("apps.found", count=len(self.filtered_apps))
         )
 
-    def _force_refresh(self) -> None:
-        """Force-refreshes the catalog from GitHub and rebuilds the list."""
-        print("[AppsPage] Forced catalog refresh...")
-        self.refresh_btn.setEnabled(False)
-        self.refresh_btn.setText(t("apps.refreshing"))
-
-        self._reload_loader = CatalogLoader(force=True)
-        self._reload_loader.finished_ok.connect(self._on_reload_finished)
-        self._reload_loader.failed.connect(self._on_reload_failed)
-        self._reload_loader.start()
-
-    def _on_reload_finished(self, count: int) -> None:
-        """Catalog updated — re-read the cache and rebuild the list."""
-        print(f"[AppsPage] Updated files: {count}. Rebuilding list...")
-
-        # Re-read data from the cache
-        self.all_apps = load_all_apps()
-        self.filtered_apps = list(self.all_apps)
-
-        # Update the category list (new ones may have appeared)
-        self._rebuild_categories()
-
-        # Rebuild cards (with current search/filter)
-        self._apply_filters()
-
-        # Return the button to its original state
-        self.refresh_btn.setEnabled(True)
-        self.refresh_btn.setText(t("apps.refresh"))
-
-    def _rebuild_categories(self) -> None:
-        """Refills the category dropdown."""
-        # Remember the current selection
-        current = self.category_combo.currentText()
+    def _populate_categories(self) -> None:
+        """Refills the category dropdown, preserving the current selection."""
+        current = self.category_combo.currentData()
 
         # Block signals so we don't trigger filtering during refill
         self.category_combo.blockSignals(True)
         self.category_combo.clear()
-        self.category_combo.addItem(t("apps.all_categories"))
+        self.category_combo.addItem(t("apps.all_categories"), None)
 
         categories = sorted({
-            app.get("category", "").strip()
+            str(app.get("category", "")).strip()
             for app in self.all_apps
-            if app.get("category")
+            if isinstance(app, dict) and str(app.get("category", "")).strip()
         })
-        self.category_combo.addItems(categories)
+
+        for category in categories:
+            self.category_combo.addItem(category, category)
 
         # Restore the selection (if the category still exists)
-        idx = self.category_combo.findText(current)
-        if idx >= 0:
-            self.category_combo.setCurrentIndex(idx)
-        else:
-            self.category_combo.setCurrentIndex(0)  # reset to "All categories"
+        idx = self.category_combo.findData(current)
+        self.category_combo.setCurrentIndex(idx if idx >= 0 else 0)
 
         self.category_combo.blockSignals(False)
 
-    def _on_reload_failed(self, error: str) -> None:
-        """Refresh error — report to the console."""
-        print(f"[AppsPage] Refresh error: {error}")
+    # ------------------------------------------------------------------
+    # Catalog
+    # ------------------------------------------------------------------
+    def _force_refresh(self) -> None:
+        """Asks the main window for a fresh catalog."""
+        if not self.refresh_btn.isEnabled():
+            return
+
+        print("[AppsPage] Forced catalog refresh requested...")
+        self.refresh_btn.setEnabled(False)
+        self.refresh_btn.setText(t("apps.refreshing"))
+        self.refresh_requested.emit()
+
+    def finish_refresh(self) -> None:
+        """Returns the "Refresh" button to its normal state."""
         self.refresh_btn.setEnabled(True)
         self.refresh_btn.setText(t("apps.refresh"))
+
+    def reload_from_cache(self) -> None:
+        """Re-reads the catalog and rebuilds the list with current filters."""
+        print("[AppsPage] Reloading the catalog from the cache...")
+
+        self.all_apps = [
+            app for app in load_all_apps() if isinstance(app, dict)
+        ]
+
+        # New categories may have appeared
+        self._populate_categories()
+
+        # Rebuild cards (with current search/filter)
+        self._apply_filters()
+
+    def set_compact_mode(self, enabled: bool) -> None:
+        """Switches between normal and compact cards."""
+        enabled = bool(enabled)
+        if enabled == self.compact_mode:
+            return
+
+        self.compact_mode = enabled
+        self._redraw_cards()
 
     # ------------------------------------------------------------------
     # Page switching
@@ -292,7 +303,6 @@ class AppsPage(QWidget):
 
     def _on_download_clicked(self, data: dict) -> None:
         """Opens the "Save as" dialog, then starts the download."""
-        from PySide6.QtWidgets import QFileDialog
         from app.ui.download_dialog import DownloadDialog
 
         # URL may come:
@@ -304,13 +314,24 @@ class AppsPage(QWidget):
             print("[AppsPage] No download URL for this program")
             return
 
-        default_name = url.split("/")[-1] if url else "download.exe"
+        # Build a safe default name: strip query strings, keep only the basename
+        parsed = urlsplit(str(url))
+        default_name = unquote(Path(parsed.path).name) or "download.exe"
+
+        downloads_dir = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.DownloadLocation
+        )
+        initial_path = (
+            str(Path(downloads_dir) / default_name)
+            if downloads_dir
+            else default_name
+        )
 
         save_path_str, _ = QFileDialog.getSaveFileName(
             self,
             t("apps.save_as"),
-            default_name,
-            "Executable files (*.exe);;All files (*.*)",
+            initial_path,
+            "Installers (*.exe *.msi);;All files (*.*)",
         )
 
         if not save_path_str:
@@ -331,38 +352,40 @@ class AppCard(QFrame):
 
     clicked = Signal(dict)
 
-    def __init__(self, data: dict) -> None:
+    def __init__(self, data: dict, compact: bool = False) -> None:
         super().__init__()
 
         self._data = data
         self.setObjectName("AppCard")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
+        icon_size = 48 if compact else 64
+        margin = 10 if compact else 16
+
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(16)
+        layout.setContentsMargins(margin, margin, margin, margin)
+        layout.setSpacing(12 if compact else 16)
 
         # --- Icon (cache first, then built-in) ---
         icon_label = QLabel()
-        icon_label.setFixedSize(64, 64)
+        icon_label.setFixedSize(icon_size, icon_size)
         icon_label.setObjectName("AppIcon")
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Look for the icon in the cache
-        cached_icon = find_icon(data)
-        icon_path = cached_icon
+        icon_path = find_icon(data)
 
         # If not in the cache — try the built-in one
         if icon_path is None:
             icon_name = data.get("icon", "")
-            if icon_name:
-                candidate = ICONS_DIR / icon_name
+            if isinstance(icon_name, str) and icon_name:
+                candidate = ICONS_DIR / Path(icon_name).name
                 if candidate.exists():
                     icon_path = candidate
 
         if icon_path is not None:
             pixmap = QPixmap(str(icon_path)).scaled(
-                64, 64,
+                icon_size, icon_size,
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation,
             )
@@ -375,12 +398,12 @@ class AppCard(QFrame):
 
         # --- Text ---
         text_layout = QVBoxLayout()
-        text_layout.setSpacing(4)
+        text_layout.setSpacing(4 if not compact else 2)
 
-        name = QLabel(data.get("name", t("details.no_name")))
+        name = QLabel(str(data.get("name", t("details.no_name"))))
         name.setObjectName("AppName")
 
-        description = QLabel(data.get("description", ""))
+        description = QLabel(str(data.get("description", "")))
         description.setObjectName("AppDescription")
         description.setWordWrap(True)
 
@@ -388,11 +411,11 @@ class AppCard(QFrame):
         if data.get("version"):
             meta_parts.append(f"v{data['version']}")
         if data.get("category"):
-            meta_parts.append(data["category"])
+            meta_parts.append(str(data["category"]))
         if data.get("size_mb"):
             meta_parts.append(f"{data['size_mb']} {t('size.mb')}")
         if data.get("license"):
-            meta_parts.append(data["license"])
+            meta_parts.append(str(data["license"]))
 
         meta = QLabel(" · ".join(meta_parts))
         meta.setObjectName("AppMeta")
