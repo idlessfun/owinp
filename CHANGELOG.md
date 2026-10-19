@@ -41,6 +41,7 @@ and versions follow [Semantic Versioning](https://semver.org/lang/ru/).
 - Version comparison handles `v` prefixes and pre-release tags (`1.0.0-beta`)
 - Update check no longer fails on Windows consoles with cp1251/cp866 code pages
 - First run now really detects the system language (the auto-detect branch was unreachable)
+- Settings and catalog JSON saved with a UTF-8 BOM are read correctly
 - External links are restricted to `http`/`https`
 
 ## [0.2.0] — 2026-09-20

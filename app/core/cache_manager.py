@@ -137,7 +137,7 @@ def _read_apps_from_cache_dir(directory: Path) -> list[dict]:
 
     for json_file in sorted(directory.glob("*.json")):
         try:
-            with open(json_file, "r", encoding="utf-8") as f:
+            with open(json_file, "r", encoding="utf-8-sig") as f:
                 data = json.load(f)
 
             if not isinstance(data, dict):

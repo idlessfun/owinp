@@ -6,6 +6,7 @@ Application entry point.
 import sys
 from pathlib import Path
 
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
@@ -58,6 +59,12 @@ def main() -> int:
     """Creates an application and displays the main window."""
     _configure_console()
 
+    # Build verification mode: create the whole UI, run the event loop briefly
+    # and exit. Used to smoke-test the compiled executable in CI/offline.
+    smoke_test = "--smoke-test" in sys.argv
+    if smoke_test:
+        sys.argv.remove("--smoke-test")
+
     first_run = not has_saved_settings()
     settings = load_user_settings()
 
@@ -87,14 +94,19 @@ def main() -> int:
     migrate_old_cache()
 
     splash: SplashScreen | None = None
-    if _should_show_splash(settings, first_run):
+    if not smoke_test and _should_show_splash(settings, first_run):
         splash = SplashScreen()
         splash.show()
         app.processEvents()  # paint the splash before the window is built
 
     window = MainWindow()
 
-    if splash is not None:
+    if smoke_test:
+        # No visible window, no external checks: just prove that the bundled
+        # Qt plugins, data files and the UI can start.
+        window.hide()
+        QTimer.singleShot(1200, app.quit)
+    elif splash is not None:
         splash.finish(window)
     else:
         # Set opacity before show() so the window does not flash at full opacity

@@ -267,7 +267,7 @@ class CatalogLoader(QThread):
                 headers={"User-Agent": USER_AGENT},
             )
             with urllib.request.urlopen(req, timeout=10) as response:
-                raw = response.read().decode("utf-8")
+                raw = response.read().decode("utf-8-sig")
 
             # Validation: is it valid JSON?
             data = json.loads(raw)
@@ -504,7 +504,7 @@ class CatalogLoader(QThread):
 
             for card in lang_dir.glob("*.json"):
                 try:
-                    with open(card, "r", encoding="utf-8") as f:
+                    with open(card, "r", encoding="utf-8-sig") as f:
                         data = json.load(f)
                 except (OSError, json.JSONDecodeError):
                     continue

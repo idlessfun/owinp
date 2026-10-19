@@ -28,7 +28,7 @@ _fallback_loaded = False
 def _read_json(path: Path) -> dict:
     """Read JSON file, return dict. On error — empty dict."""
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8-sig") as f:
             return json.load(f)
     except Exception as e:
         print(f"[translator] Error reading {path.name}: {e}")

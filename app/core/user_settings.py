@@ -93,7 +93,8 @@ def load_user_settings() -> dict:
         return dict(DEFAULTS)
 
     try:
-        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+        # utf-8-sig: tolerate a BOM added by Notepad or PowerShell
+        with open(SETTINGS_FILE, "r", encoding="utf-8-sig") as f:
             data = json.load(f)
         if not isinstance(data, dict):
             print("[user_settings] Invalid settings file, defaults are used")
