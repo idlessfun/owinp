@@ -75,6 +75,9 @@ class AppDetailsPage(QWidget):
         self.scroll.setWidgetResizable(True)
         self.scroll.setObjectName("DetailsScroll")
         self.scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
 
         self.content = QWidget()
         self.content_layout = QVBoxLayout(self.content)

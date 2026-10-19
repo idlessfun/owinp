@@ -8,6 +8,11 @@
     "banner.new_version": "🎉 Доступна новая версия OWINP",
     "banner.whats_new": "Что нового",
 
+    "splash.subtitle": "Программы для Windows · v{version}",
+    "splash.preparing": "Подготовка…",
+    "splash.loading": "Загрузка каталога…",
+    "splash.ready": "Готово",
+
     "home.title": "Добро пожаловать в OWINP",
     "home.subtitle": "Каталог open-source программ для Windows.\nВерсия: v{version}",
     "home.check_updates": "🔄 Проверить обновления",
@@ -23,6 +28,13 @@
     "settings.font_size": "Размер шрифта:",
     "settings.compact_mode": "Компактный режим (карточки меньше)",
     "settings.animations": "Анимации интерфейса",
+    "settings.animations.low_end_hint": "Недоступно, пока включён режим слабого ПК.",
+    "settings.low_end": "Режим слабого ПК (отключить все анимации)",
+    "settings.low_end.tooltip": "Отключает анимацию заставки, переходы страниц и эффекты карточек. Полезно на старых компьютерах.",
+    "settings.splash": "Заставка при запуске:",
+    "settings.splash.always": "Всегда",
+    "settings.splash.first": "Только при первом запуске",
+    "settings.splash.never": "Никогда",
 
     "settings.section.network": "Сеть и обновления",
     "settings.check_updates_on_start": "Проверять обновления при запуске",

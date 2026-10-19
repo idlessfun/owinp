@@ -11,14 +11,15 @@
 
 **Ready-made version for Windows** — no need to install Python:
 
-- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.2.0/OWINP-Setup-0.2.0.exe)** — regular installation into the system (21.7 MB)
-- 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.2.0/OWINP-Portable-0.2.0.zip)** — unpack and run (29 MB)
+- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.3.0/OWINP-Setup-0.3.0.exe)** — regular installation into the system (21.7 MB)
+- 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.3.0/OWINP-Portable-0.3.0.zip)** — unpack and run (29 MB)
 
 Both versions are in the [**Releases**](https://github.com/idlessfun/owinp/releases/latest) section.
 
 ## ✨ Features
 
 - 🎨 **Modern interface** — dark theme, F-Droid style design
+- ✨ **Smooth animations** — animated startup splash, page transitions and card cascade, plus a low-end PC mode that turns every animation off
 - 📦 **Program catalog** — cards with description, characteristics, and screenshots
 - 🔍 **Search and filters** — instant search by name, description, and tags, filter by categories
 - ⬇️ **Built-in downloading** — progress bar, speed, cancellation

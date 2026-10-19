@@ -78,9 +78,12 @@ DEFAULTS = {
     "auto_run_after_download": False,    # Run the file after downloading it
     "show_update_banner": True,          # Display the “Update Available” banner
     "compact_mode": False,               # Compact mode (fewer cards)
-    "animations_enabled": True,          # animations (placeholder—to be added later)
+    "animations_enabled": True,          # Interface animations
+    "low_end_mode": False,               # Low-end PC mode: all animations off
+    "splash_mode": "always",             # always / first / never
     "show_screenshots": True,            # Display screenshots on the program page
     "language": "en",
+    "window_geometry": "",               # Base64 QMainWindow.saveGeometry()
 }
 
 

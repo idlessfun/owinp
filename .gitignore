@@ -23,6 +23,11 @@ dist/
 .coverage
 htmlcov/
 
+# Local build helpers
+.build_tmp/
+.build_cache/
+.smoke_appdata/
+
 # OS
 .DS_Store
 Thumbs.db

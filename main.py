@@ -10,7 +10,30 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from app import __version__
+from app.core.translator import detect_system_language, set_language
+from app.core.user_settings import has_saved_settings, load_user_settings
+from app.ui import animations
 from app.ui.main_window import MainWindow
+from app.ui.splash_screen import SplashScreen
+
+
+def _prepare_language(settings: dict) -> None:
+    """Loads the UI language before the splash screen is painted."""
+    lang = settings.get("language", "")
+    if not lang or not has_saved_settings():
+        lang = detect_system_language()
+    set_language(lang)
+
+
+def _should_show_splash(settings: dict, first_run: bool) -> bool:
+    """always / first / never, with a safe fallback for unknown values."""
+    mode = settings.get("splash_mode", "always")
+
+    if mode == "never":
+        return False
+    if mode == "first":
+        return first_run
+    return True
 
 
 def _configure_console() -> None:
@@ -35,6 +58,17 @@ def main() -> int:
     """Creates an application and displays the main window."""
     _configure_console()
 
+    first_run = not has_saved_settings()
+    settings = load_user_settings()
+
+    # One global switch for the whole UI, including the splash screen
+    animations.set_enabled(
+        bool(settings.get("animations_enabled", True))
+        and not bool(settings.get("low_end_mode", False))
+    )
+
+    _prepare_language(settings)
+
     app = QApplication(sys.argv)
 
     app.setApplicationName("OWINP")
@@ -52,8 +86,22 @@ def main() -> int:
     from app.core.cache_manager import migrate_old_cache
     migrate_old_cache()
 
+    splash: SplashScreen | None = None
+    if _should_show_splash(settings, first_run):
+        splash = SplashScreen()
+        splash.show()
+        app.processEvents()  # paint the splash before the window is built
+
     window = MainWindow()
-    window.show()
+
+    if splash is not None:
+        splash.finish(window)
+    else:
+        # Set opacity before show() so the window does not flash at full opacity
+        if animations.is_enabled():
+            window.setWindowOpacity(0.0)
+        window.show()
+        animations.fade_window(window, 0.0, 1.0, 260)
 
     try:
         return app.exec()

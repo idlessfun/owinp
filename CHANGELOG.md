@@ -7,6 +7,27 @@ and versions follow [Semantic Versioning](https://semver.org/lang/ru/).
 
 ## [Unreleased]
 
+### Planned
+- GitHub token in settings
+- Admin tool adaptation for per-language cards
+
+## [0.3.0] — 2026-10-19
+
+### Added
+- Animated startup splash (ring, icon, progress) with a setting: always / first launch / never
+- Smooth UI animations: window fade-in, page transitions, card cascade, expandable update banner, smooth download progress
+- "Low-end PC mode" — one switch that disables every animation, including the splash
+- Window size and position are remembered between launches
+- Hotkeys: `Ctrl+F` — search, `Esc` — back from a program page, `F5` — refresh catalog
+- Dark-themed scrollbars and checkboxes
+
+### Changed
+- Search input is debounced (150 ms) instead of rebuilding the list on every key
+- Catalog JSON and images are written atomically (temporary file + rename)
+- Icons/screenshots are revalidated with conditional HTTP requests instead of being downloaded every hour
+- Compact mode now actually changes card size
+- Settings file is written atomically
+
 ### Fixed
 - Crash on exit and overlapping update/catalog checks (a running `QThread` was destroyed)
 - The program list is rebuilt automatically after a background catalog update
@@ -21,16 +42,6 @@ and versions follow [Semantic Versioning](https://semver.org/lang/ru/).
 - Update check no longer fails on Windows consoles with cp1251/cp866 code pages
 - First run now really detects the system language (the auto-detect branch was unreachable)
 - External links are restricted to `http`/`https`
-
-### Changed
-- Catalog JSON and images are written atomically (temporary file + rename)
-- Icons/screenshots are revalidated with conditional HTTP requests instead of being downloaded every hour
-- Compact mode now actually changes card size
-- Settings file is written atomically
-
-### Planned
-- GitHub token in settings
-- Admin tool adaptation for per-language cards
 
 ## [0.2.0] — 2026-09-20
 

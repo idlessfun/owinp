@@ -8,6 +8,11 @@
     "banner.new_version": "🎉 A new version of OWINP is available",
     "banner.whats_new": "What's New",
 
+    "splash.subtitle": "Open Windows Programs · v{version}",
+    "splash.preparing": "Preparing…",
+    "splash.loading": "Loading catalog…",
+    "splash.ready": "Ready",
+
     "home.title": "Welcome to OWINP",
     "home.subtitle": "A directory of open-source software for Windows.\nVersion: v{version}",
     "home.check_updates": "🔄 Check for updates",
@@ -23,6 +28,13 @@
     "settings.font_size": "Font Size:",
     "settings.compact_mode": "Compact mode (smaller cards)",
     "settings.animations": "Interface Animations",
+    "settings.animations.low_end_hint": "Disabled while low-end PC mode is on.",
+    "settings.low_end": "Low-end PC mode (disable all animations)",
+    "settings.low_end.tooltip": "Turns off the splash animation, page transitions and card effects. Useful on older computers.",
+    "settings.splash": "Startup splash:",
+    "settings.splash.always": "Always",
+    "settings.splash.first": "First launch only",
+    "settings.splash.never": "Never",
 
     "settings.section.network": "Network and Updates",
     "settings.check_updates_on_start": "Check for updates at startup",

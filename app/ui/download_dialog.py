@@ -22,6 +22,7 @@ from app.core.downloader import Downloader
 from app.core.cache_manager import find_icon
 from app.core.translator import t
 from app.ui.theme_helper import get_dialog_qss
+from app.ui import animations
 
 
 ICONS_DIR = Path(__file__).parent.parent / "resources" / "icons"
@@ -41,6 +42,7 @@ class DownloadDialog(QDialog):
         self.save_path = save_path
         self.downloader: Downloader | None = None
         self._close_pending = False
+        self._progress_anim = None
 
         self.setWindowTitle(
             t("download.title", name=app_data.get("name", ""))
@@ -213,7 +215,7 @@ class DownloadDialog(QDialog):
 
         if total > 0:
             percent = int(downloaded * 100 / total)
-            self.progress_bar.setValue(percent)
+            self._set_progress_value(percent)
         else:
             # If the server did not provide the size — show an "infinite" progress
             self.progress_bar.setRange(0, 0)
@@ -230,9 +232,23 @@ class DownloadDialog(QDialog):
             percent = int(downloaded * 100 / total)
             print(f"[download] {percent}% ({dl_text}/{total_text}, {speed_text})")
 
+    def _set_progress_value(self, value: int) -> None:
+        """Smoothly moves the progress bar instead of jumping on every chunk."""
+        if self._progress_anim is not None:
+            animations.stop(self._progress_anim)
+            self._progress_anim = None
+
+        self._progress_anim = animations.animate_value(
+            self.progress_bar, max(0, min(100, value)), 160
+        )
+
     def _on_finished(self, path: str) -> None:
         """Success. Change the interface to "done"."""
         print(f"[download] Finished: {path}")
+
+        if self._progress_anim is not None:
+            animations.stop(self._progress_anim)
+            self._progress_anim = None
 
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(100)

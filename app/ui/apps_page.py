@@ -9,8 +9,8 @@ Inside — QStackedWidget with two states:
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from PySide6.QtCore import QStandardPaths, Qt, Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QStandardPaths, Qt, QTimer, Signal
+from PySide6.QtGui import QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -30,6 +30,7 @@ from app.core.cache_manager import find_icon
 from app.core.translator import t
 from app.core.user_settings import load_user_settings
 from app.ui.app_details_page import AppDetailsPage
+from app.ui import animations
 
 
 ICONS_DIR = Path(__file__).parent.parent / "resources" / "icons"
@@ -54,6 +55,7 @@ class AppsPage(QWidget):
 
         settings = load_user_settings()
         self.compact_mode: bool = bool(settings.get("compact_mode", False))
+        self._pending_card_animation = False
 
         # Outer layout
         outer = QVBoxLayout(self)
@@ -81,6 +83,7 @@ class AppsPage(QWidget):
         # Initial fill of the list
         self._populate_categories()
         self._apply_filters()
+        self._setup_shortcuts()
 
     # ------------------------------------------------------------------
     # Building the list page
@@ -92,47 +95,59 @@ class AppsPage(QWidget):
         layout.setContentsMargins(40, 30, 40, 30)
         layout.setSpacing(16)
 
-        # Title
+        # ---- Title row: title, counter, refresh ----
+        header = QHBoxLayout()
+        header.setSpacing(12)
+
         title = QLabel(t("apps.title"))
         title.setObjectName("PageTitle")
-        layout.addWidget(title)
+        header.addWidget(title)
+        header.addStretch(1)
 
-        # ---- Toolbar: search + category + counter ----
-        toolbar = QHBoxLayout()
-        toolbar.setSpacing(12)
+        self.counter_label = QLabel("")
+        self.counter_label.setObjectName("CounterLabel")
+        self.counter_label.setFixedWidth(110)
+        self.counter_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        header.addWidget(self.counter_label)
 
         # "Refresh catalog" button
         self.refresh_btn = QPushButton(t("apps.refresh"))
         self.refresh_btn.setObjectName("RefreshButton")
         self.refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.refresh_btn.setFixedWidth(140)
+        self.refresh_btn.setFixedWidth(120)
         self.refresh_btn.clicked.connect(self._force_refresh)
-        toolbar.addWidget(self.refresh_btn)
+        header.addWidget(self.refresh_btn)
+
+        layout.addLayout(header)
+
+        # ---- Toolbar: search + category ----
+        toolbar = QHBoxLayout()
+        toolbar.setSpacing(12)
 
         # Search input
         self.search_input = QLineEdit()
         self.search_input.setObjectName("SearchInput")
         self.search_input.setPlaceholderText(t("apps.search_placeholder"))
         self.search_input.setClearButtonEnabled(True)
-        self.search_input.textChanged.connect(self._apply_filters)
+        self.search_input.setMinimumWidth(160)
+        self.search_input.textChanged.connect(self._on_search_text_changed)
+
+        # Debounce: rebuild the list once the user stops typing, not on every key
+        self._search_timer = QTimer(self)
+        self._search_timer.setSingleShot(True)
+        self._search_timer.setInterval(150)
+        self._search_timer.timeout.connect(self._apply_filters)
         toolbar.addWidget(self.search_input, stretch=1)
 
         # Category dropdown
         self.category_combo = QComboBox()
         self.category_combo.setObjectName("CategoryCombo")
-        self.category_combo.setFixedWidth(220)
+        self.category_combo.setFixedWidth(200)
         self.category_combo.addItem(t("apps.all_categories"), None)
         self.category_combo.currentIndexChanged.connect(self._apply_filters)
         toolbar.addWidget(self.category_combo)
-
-        # Counter
-        self.counter_label = QLabel("")
-        self.counter_label.setObjectName("CounterLabel")
-        self.counter_label.setFixedWidth(120)
-        self.counter_label.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        )
-        toolbar.addWidget(self.counter_label)
 
         layout.addLayout(toolbar)
 
@@ -141,6 +156,9 @@ class AppsPage(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setObjectName("AppsScroll")
         scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
 
         self.cards_container = QWidget()
         self.cards_layout = QVBoxLayout(self.cards_container)
@@ -225,6 +243,52 @@ class AppsPage(QWidget):
             t("apps.found", count=len(self.filtered_apps))
         )
 
+        # Cards appear with a small cascade. The very first fill happens
+        # before the widget is visible, so it is delayed until showEvent().
+        if animations.is_enabled() and self.filtered_apps:
+            if self.isVisible():
+                self._animate_cards()
+            else:
+                self._pending_card_animation = True
+
+    def _on_search_text_changed(self) -> None:
+        """Restarts the debounce timer while the user is typing."""
+        self._search_timer.start()
+
+    def focus_search(self) -> None:
+        """Focuses the search field (Ctrl+F)."""
+        self.search_input.setFocus(Qt.FocusReason.ShortcutFocusReason)
+        self.search_input.selectAll()
+
+    def _setup_shortcuts(self) -> None:
+        """Esc returns from a program page to the list."""
+        shortcut = QShortcut(QKeySequence("Esc"), self)
+        shortcut.activated.connect(self._on_escape)
+        self._escape_shortcut = shortcut
+
+    def _on_escape(self) -> None:
+        if self.stack.currentIndex() == 1:
+            self._show_list()
+
+    def _collect_cards(self) -> list["AppCard"]:
+        cards: list[AppCard] = []
+        for index in range(self.cards_layout.count()):
+            widget = self.cards_layout.itemAt(index).widget()
+            if isinstance(widget, AppCard):
+                cards.append(widget)
+        return cards
+
+    def _animate_cards(self) -> None:
+        """Fades cards in one after another (max 300 ms of total delay)."""
+        for index, card in enumerate(self._collect_cards()):
+            animations.fade_in(card, duration=200, delay=min(index * 25, 300))
+
+    def showEvent(self, event) -> None:  # noqa: N802 (Qt naming)
+        super().showEvent(event)
+        if self._pending_card_animation:
+            self._pending_card_animation = False
+            self._animate_cards()
+
     def _populate_categories(self) -> None:
         """Refills the category dropdown, preserving the current selection."""
         current = self.category_combo.currentData()
@@ -297,9 +361,11 @@ class AppsPage(QWidget):
         print(f"[AppsPage] Open page: {data.get('name')}")
         self.details_page.set_app_data(data)
         self.stack.setCurrentIndex(1)
+        animations.fade_in(self.details_page, 200)
 
     def _show_list(self) -> None:
         self.stack.setCurrentIndex(0)
+        animations.fade_in(self.list_page, 180)
 
     def _on_download_clicked(self, data: dict) -> None:
         """Opens the "Save as" dialog, then starts the download."""

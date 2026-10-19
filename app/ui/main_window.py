@@ -4,7 +4,8 @@ The main window of the OWINP application.
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QByteArray, Qt, QTimer
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -49,6 +50,7 @@ from app.core.translator import (
 
 from app.ui.apps_page import AppsPage
 from app.ui.update_dialog import UpdateDialog
+from app.ui import animations
 
 
 class MainWindow(QMainWindow):
@@ -69,6 +71,9 @@ class MainWindow(QMainWindow):
         # User settings (theme, font, etc.)
         self.user_settings = load_user_settings()
 
+        # One global switch for all animations (also used by the splash)
+        self._apply_animation_settings()
+
         # Set the UI language: saved value, or auto-detect on the first run
         lang = self.user_settings.get("language", "")
         if not lang or not has_saved_settings():
@@ -81,9 +86,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"OWINP — Open Windows Programs v{__version__}")
         self.resize(1100, 700)
         self.setMinimumSize(800, 500)
+        self._restore_window_geometry()
 
         self._build_ui()
         self._apply_styles()
+        self._setup_shortcuts()
 
         # Run checks only if they are enabled in the settings
         if self.user_settings.get("check_updates_on_start", True):
@@ -95,6 +102,69 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(3000, self._refresh_catalog)
         else:
             print("[main] Catalog updates are disabled in the settings")
+
+    # ------------------------------------------------------------------
+    # Window geometry and shortcuts
+    # ------------------------------------------------------------------
+    def _restore_window_geometry(self) -> None:
+        """Restores the last window size/position if it is still on screen."""
+        encoded = self.user_settings.get("window_geometry", "")
+        if not isinstance(encoded, str) or not encoded:
+            return
+
+        try:
+            geometry = QByteArray.fromBase64(encoded.encode("ascii"))
+            if geometry.isEmpty() or not self.restoreGeometry(geometry):
+                return
+        except Exception as e:
+            print(f"[main] Failed to restore window geometry: {e}")
+            return
+
+        # Do not restore a window that would be completely off all screens
+        frame = self.frameGeometry()
+        on_screen = any(
+            screen.availableGeometry().intersects(frame)
+            for screen in QApplication.screens()
+        )
+        if on_screen:
+            return
+
+        print("[main] Saved window position is off screen — using defaults")
+        self.resize(1100, 700)
+        screen = QApplication.primaryScreen()
+        if screen is not None:
+            available = screen.availableGeometry()
+            self.move(
+                available.center().x() - self.width() // 2,
+                available.center().y() - self.height() // 2,
+            )
+
+    def _save_window_geometry(self) -> None:
+        """Remembers the window size/position for the next launch."""
+        try:
+            encoded = bytes(self.saveGeometry().toBase64()).decode("ascii")
+        except Exception as e:
+            print(f"[main] Failed to save window geometry: {e}")
+            return
+
+        self.user_settings["window_geometry"] = encoded
+        save_user_settings(self.user_settings)
+
+    def _setup_shortcuts(self) -> None:
+        self._shortcuts = []
+
+        search_shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
+        search_shortcut.activated.connect(self._focus_search)
+        self._shortcuts.append(search_shortcut)
+
+        refresh_shortcut = QShortcut(QKeySequence("F5"), self)
+        refresh_shortcut.activated.connect(lambda: self._refresh_catalog(force=True))
+        self._shortcuts.append(refresh_shortcut)
+
+    def _focus_search(self) -> None:
+        """Ctrl+F: open the Programs page and focus the search field."""
+        self.nav_list.setCurrentRow(1)
+        self.apps_page.focus_search()
 
     # ------------------------------------------------------------------
     # Building the Interface
@@ -129,7 +199,9 @@ class MainWindow(QMainWindow):
     def _build_update_banner(self) -> QFrame:
         banner = QFrame()
         banner.setObjectName("UpdateBanner")
-        banner.setFixedHeight(44)
+        # 0..44 px is animated when the banner appears/disappears
+        banner.setMinimumHeight(0)
+        banner.setMaximumHeight(0)
 
         layout = QHBoxLayout(banner)
         layout.setContentsMargins(20, 0, 12, 0)
@@ -151,7 +223,7 @@ class MainWindow(QMainWindow):
         close_btn.setObjectName("BannerClose")
         close_btn.setFixedSize(28, 28)
         close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        close_btn.clicked.connect(lambda: self.update_banner.setVisible(False))
+        close_btn.clicked.connect(self._hide_update_banner)
         layout.addWidget(close_btn)
 
         return banner
@@ -357,13 +429,33 @@ class MainWindow(QMainWindow):
         )
         form.addRow("", self.compact_check)
 
-        # Animations (placeholder for future use)
+        # Animations
         self.animations_check = QCheckBox(t("settings.animations"))
         self.animations_check.setChecked(self.user_settings.get("animations_enabled", True))
-        self.animations_check.toggled.connect(
-            lambda v: self._on_setting_toggled("animations_enabled", v)
-        )
+        self.animations_check.toggled.connect(self._on_animations_toggled)
         form.addRow("", self.animations_check)
+
+        # Low-end PC mode: master switch, disables every animation
+        self.low_end_check = QCheckBox(t("settings.low_end"))
+        self.low_end_check.setToolTip(t("settings.low_end.tooltip"))
+        self.low_end_check.setChecked(self.user_settings.get("low_end_mode", False))
+        self.low_end_check.toggled.connect(self._on_low_end_toggled)
+        form.addRow("", self.low_end_check)
+
+        # Startup splash
+        self.splash_combo = QComboBox()
+        self.splash_combo.setObjectName("SettingsInput")
+        self.splash_combo.setFixedWidth(320)
+        self.splash_combo.addItem(t("settings.splash.always"), "always")
+        self.splash_combo.addItem(t("settings.splash.first"), "first")
+        self.splash_combo.addItem(t("settings.splash.never"), "never")
+        idx = self.splash_combo.findData(
+            self.user_settings.get("splash_mode", "always")
+        )
+        if idx >= 0:
+            self.splash_combo.setCurrentIndex(idx)
+        self.splash_combo.currentIndexChanged.connect(self._on_splash_mode_changed)
+        form.addRow(t("settings.splash"), self.splash_combo)
 
         return group
 
@@ -486,6 +578,53 @@ class MainWindow(QMainWindow):
             t("dialog.restart.text"),
         )
 
+    def _on_animations_toggled(self, value: bool) -> None:
+        """Immediately applies the animation switch."""
+        self.user_settings["animations_enabled"] = value
+        print(f"[main] animations_enabled = {value}")
+        save_user_settings(self.user_settings)
+        self._apply_animation_settings()
+
+    def _on_low_end_toggled(self, value: bool) -> None:
+        """Low-end PC mode: all animations off (master switch)."""
+        self.user_settings["low_end_mode"] = value
+        print(f"[main] low_end_mode = {value}")
+        save_user_settings(self.user_settings)
+        self._apply_animation_settings()
+
+    def _on_splash_mode_changed(self) -> None:
+        mode = self.splash_combo.currentData()
+        if not mode:
+            return
+        self.user_settings["splash_mode"] = mode
+        print(f"[main] splash_mode = {mode}")
+        save_user_settings(self.user_settings)
+
+    def _apply_animation_settings(self) -> None:
+        """
+        Recalculates the effective animation state and syncs the controls.
+
+        Effective rule: animations are on only if the user enabled them AND
+        low-end PC mode is off.
+        """
+        low_end = bool(self.user_settings.get("low_end_mode", False))
+        user_enabled = bool(self.user_settings.get("animations_enabled", True))
+
+        animations.set_enabled(user_enabled and not low_end)
+
+        if hasattr(self, "animations_check"):
+            self.animations_check.setEnabled(not low_end)
+            self.animations_check.setToolTip(
+                t("settings.animations.low_end_hint") if low_end else ""
+            )
+
+        # If an expand/collapse was interrupted, put the banner into a sane state
+        if hasattr(self, "update_banner"):
+            if self.update_banner.isVisible():
+                self.update_banner.setMaximumHeight(44)
+            else:
+                self.update_banner.setMaximumHeight(0)
+
     def _on_setting_toggled(self, key: str, value: bool) -> None:
         """Checkbox toggle handler."""
         self.user_settings[key] = value
@@ -494,7 +633,7 @@ class MainWindow(QMainWindow):
 
         # If you've made a change that affects the UI, apply it immediately
         if key == "show_update_banner" and not value:
-            self.update_banner.setVisible(False)
+            self._hide_update_banner()
 
         if key == "compact_mode":
             self.apps_page.set_compact_mode(value)
@@ -559,6 +698,7 @@ class MainWindow(QMainWindow):
         for key, checkbox in [
             ("compact_mode", self.compact_check),
             ("animations_enabled", self.animations_check),
+            ("low_end_mode", self.low_end_check),
             ("check_updates_on_start", self.check_updates_check),
             ("refresh_catalog_on_start", self.refresh_catalog_check),
             ("show_update_banner", self.show_banner_check),
@@ -569,12 +709,24 @@ class MainWindow(QMainWindow):
             checkbox.setChecked(self.user_settings.get(key, DEFAULTS.get(key, False)))
             checkbox.blockSignals(False)
 
+        # Splash mode
+        idx = self.splash_combo.findData(
+            self.user_settings.get("splash_mode", "always")
+        )
+        if idx >= 0:
+            self.splash_combo.blockSignals(True)
+            self.splash_combo.setCurrentIndex(idx)
+            self.splash_combo.blockSignals(False)
+
+        self._apply_animation_settings()
+
     # ------------------------------------------------------------------
     # Navigation Handlers
     # ------------------------------------------------------------------
     def _on_nav_changed(self, index: int) -> None:
         if 0 <= index < self.content_area.count():
             self.content_area.setCurrentIndex(index)
+            animations.fade_in(self.content_area.currentWidget(), 180)
 
     # ------------------------------------------------------------------
     # Updates
@@ -620,7 +772,7 @@ class MainWindow(QMainWindow):
         self._update_info = info
         show_banner = self.user_settings.get("show_update_banner", True)
         if show_banner:
-            self.update_banner.setVisible(True)
+            self._show_update_banner()
             print(f"[main] An update banner is displayed: v{info.get('version')}")
         else:
             print(f"[main] The banner is disabled, but there is an update: v{info.get('version')}")
@@ -628,6 +780,39 @@ class MainWindow(QMainWindow):
         if self._manual_check:
             self._manual_check = False
             self._show_update_dialog()
+
+    def _show_update_banner(self) -> None:
+        """Expands the update banner smoothly instead of a hard show()."""
+        if (
+            self.update_banner.isVisible()
+            and self.update_banner.maximumHeight() >= 44
+        ):
+            return
+
+        self.update_banner.setVisible(True)
+        animations.animate_max_height(
+            self.update_banner,
+            self.update_banner.maximumHeight(),
+            44,
+            220,
+        )
+
+    def _hide_update_banner(self) -> None:
+        """Collapses the update banner smoothly."""
+        if not self.update_banner.isVisible():
+            return
+
+        animations.animate_max_height(
+            self.update_banner,
+            self.update_banner.height(),
+            0,
+            180,
+            on_finished=self._finish_hide_banner,
+        )
+
+    def _finish_hide_banner(self) -> None:
+        self.update_banner.setMaximumHeight(0)
+        self.update_banner.setVisible(False)
 
     def _on_no_update(self) -> None:
         print("[main] No updates")
@@ -845,6 +1030,54 @@ class MainWindow(QMainWindow):
                 border: none;
             }
 
+            QScrollBar:vertical {
+                background: transparent;
+                width: 10px;
+                margin: 0;
+            }
+
+            QScrollBar::handle:vertical {
+                background: __BORDER__;
+                border-radius: 4px;
+                min-height: 30px;
+            }
+
+            QScrollBar::handle:vertical:hover {
+                background: __ACCENT__;
+            }
+
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0;
+            }
+
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: transparent;
+            }
+
+            QScrollBar:horizontal {
+                background: transparent;
+                height: 10px;
+                margin: 0;
+            }
+
+            QScrollBar::handle:horizontal {
+                background: __BORDER__;
+                border-radius: 4px;
+                min-width: 30px;
+            }
+
+            QScrollBar::handle:horizontal:hover {
+                background: __ACCENT__;
+            }
+
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+                width: 0;
+            }
+
+            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+                background: transparent;
+            }
+
             #AppCard {
                 background-color: __CARD__;
                 border: 1px solid __BORDER__;
@@ -1040,6 +1273,26 @@ class MainWindow(QMainWindow):
                 font-size: 14px;
             }
 
+            #RefreshButton {
+                background-color: __CARD__;
+                color: __TEXT_DIM__;
+                border: 1px solid __BORDER__;
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-weight: 500;
+                font-size: 13px;
+            }
+
+            #RefreshButton:hover {
+                color: __TEXT_PRIMARY__;
+                border: 1px solid __ACCENT__;
+            }
+
+            #RefreshButton:disabled {
+                color: __TEXT_MUTED__;
+                border: 1px solid __BORDER__;
+            }
+
             #SecondaryButton:hover {
                 background-color: __CARD__;
                 color: __TEXT_PRIMARY__;
@@ -1112,6 +1365,35 @@ class MainWindow(QMainWindow):
                 border: 1px solid __ACCENT__;
             }
 
+            QCheckBox {
+                background-color: transparent;
+                color: __TEXT_NORMAL__;
+                spacing: 8px;
+                padding: 2px 0;
+            }
+
+            QCheckBox:disabled {
+                color: __TEXT_MUTED__;
+            }
+
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border: 1px solid __BORDER__;
+                border-radius: 4px;
+                background-color: __CARD__;
+            }
+
+            QCheckBox::indicator:hover {
+                border: 1px solid __ACCENT__;
+            }
+
+            QCheckBox::indicator:checked {
+                background-color: __ACCENT__;
+                border: 1px solid __ACCENT__;
+                image: url(__CHECK_ICON__);
+            }
+
             #SettingsPath {
                 font-size: 11px;
                 color: __TEXT_MUTED__;
@@ -1136,6 +1418,10 @@ class MainWindow(QMainWindow):
         """
 
         # Set the theme colors
+        check_icon = (
+            Path(__file__).parent.parent / "resources" / "icons" / "check.svg"
+        ).as_posix()
+
         replacements = {
             "__ACCENT__": accent,
             "__ACCENT_SOFT__": self._mix(accent, background, 0.75),
@@ -1150,6 +1436,7 @@ class MainWindow(QMainWindow):
             "__TEXT_SOFT__": text_soft,
             "__TEXT_MUTED__": text_muted,
             "__FONT_SIZE__": str(font_size),
+            "__CHECK_ICON__": check_icon,
         }
         for key, value in replacements.items():
             styles = styles.replace(key, value)
@@ -1189,6 +1476,9 @@ class MainWindow(QMainWindow):
         is hidden immediately and the application quits when the workers are
         done (or after a safety timeout).
         """
+        if not self._closing:
+            self._save_window_geometry()
+
         if self._closing:
             event.accept()
             return
