@@ -9,7 +9,7 @@
     "downloads": [
         {
             "label": "Download",
-            "url": "https://www.7-zip.org/a/7z2603-x64.exe",
+            "url": "https://www.7-zip.org/a/7z2409-x64.exe",
             "primary": true
         },
         {
@@ -27,7 +27,7 @@
         {
             "label": "Mirror",
             "url": "https://github.com/ip7z/7zip/releases/download/26.03/7z2603-x64.exe",
-            "primary": false
+            "primary": true
         }
     ],
     "is_open_source": true,
