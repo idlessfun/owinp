@@ -2,7 +2,9 @@ r"""
 OWINP Client User Settings.
 
 Stores the selected theme and interface settings.
-Saved to %APPDATA%\OWINP\settings.json
+Saved to settings.json in the application data folder:
+- %APPDATA%\OWINP for installed builds
+- OWINP-data next to OWINP.exe for portable builds
 
 Security:
 - The file does not contain any secrets
@@ -14,9 +16,10 @@ import json
 import os
 from pathlib import Path
 
+from app.core.runtime_paths import data_dir
 
-APPDATA = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
-SETTINGS_DIR = APPDATA / "OWINP"
+
+SETTINGS_DIR = data_dir()
 SETTINGS_FILE = SETTINGS_DIR / "settings.json"
 
 

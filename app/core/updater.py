@@ -16,11 +16,14 @@ from app.core.cache_manager import (
     should_check_version_now,
     set_last_version_check,
 )
+from app.core.catalog_loader import _is_allowed_url, _open_url
 from app.core.thread_registry import register, unregister
 
 # GitHub repository—this is where we'll go
 GITHUB_REPO = "idlessfun/owinp"
 API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+GITHUB_API_HOSTS = frozenset({"api.github.com"})
+MAX_API_BYTES = 2 * 1024 * 1024
 
 
 class UpdateChecker(QThread):
@@ -45,6 +48,11 @@ class UpdateChecker(QThread):
         """
         super().__init__()
         self.force = force
+        self._cancelled = False
+
+    def cancel(self) -> None:
+        """Asks the worker to stop as soon as the current request returns."""
+        self._cancelled = True
 
     def run(self) -> None:
         """Main Flow Method. Runs automatically when .start()."""
@@ -71,6 +79,9 @@ class UpdateChecker(QThread):
 
     def _check(self) -> None:
         """Performs the actual request and emits the result signal."""
+        if self._cancelled:
+            return
+
         # Throttling: if it's not a “force” request, and it was recently checked, skip it
         if not self.force and not should_check_version_now():
             print("[updater] Update check skipped (throttling)")
@@ -89,27 +100,51 @@ class UpdateChecker(QThread):
             },
         )
 
-        with urllib.request.urlopen(req, timeout=10) as response:
-            data = json.loads(response.read().decode("utf-8"))
+        with _open_url(req, GITHUB_API_HOSTS, timeout=10) as response:
+            if not _is_allowed_url(response.geturl(), GITHUB_API_HOSTS):
+                self.check_failed.emit("Unexpected response URL")
+                return
+            raw = response.read(MAX_API_BYTES + 1)
+
+        if len(raw) > MAX_API_BYTES:
+            self.check_failed.emit("The response from GitHub is too large")
+            return
+
+        if self._cancelled:
+            return
+
+        data = json.loads(raw.decode("utf-8"))
 
         if not isinstance(data, dict):
             self.check_failed.emit("Unexpected response from GitHub")
             return
 
         # Retrieving release information
-        tag_name = data.get("tag_name", "")          # for example "v0.2.0"
-        release_name = data.get("name", "")          # for example "OWINP v0.2.0"
-        body = data.get("body", "")                  # Release Notes
-        html_url = data.get("html_url", "")          # link to the release page
-        published_at = data.get("published_at", "")  # publication date
+        tag_name = data.get("tag_name")              # for example "v0.2.0"
+        release_name = data.get("name")              # for example "OWINP v0.2.0"
+        body = data.get("body")                      # Release Notes
+        html_url = data.get("html_url")              # link to the release page
+        published_at = data.get("published_at")      # publication date
+
+        if not isinstance(tag_name, str) or not tag_name.strip():
+            self.check_failed.emit("Unexpected response from GitHub")
+            return
+
+        release_name = release_name if isinstance(release_name, str) else ""
+        body = body if isinstance(body, str) else ""
+        html_url = html_url if isinstance(html_url, str) else ""
+        published_at = published_at if isinstance(published_at, str) else ""
 
         # Record the time of a successful check
         set_last_version_check()
 
         # Remove the "v" prefix from the tag: "v0.2.0" → "0.2.0"
-        latest_version = str(tag_name).strip().lstrip("vV").strip()
+        latest_version = tag_name.strip().lstrip("vV").strip()
 
         print(f"[updater] Latest version on GitHub: {latest_version}")
+
+        if self._cancelled:
+            return
 
         # Comparing Versions
         if self._is_newer(latest_version, __version__):

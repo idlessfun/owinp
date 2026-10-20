@@ -63,7 +63,11 @@ class UpdateDialog(QDialog):
         arrow = QLabel("→")
         arrow.setObjectName("VersionArrow")
 
-        new_label = QLabel(t("dialog.update.new", version=self.info.get('version', '?')))
+        new_version = self.info.get("version", "?")
+        if not isinstance(new_version, str):
+            new_version = str(new_version)
+
+        new_label = QLabel(t("dialog.update.new", version=new_version))
         new_label.setObjectName("VersionNew")
 
         versions_layout.addWidget(current_label)
@@ -81,25 +85,30 @@ class UpdateDialog(QDialog):
         # QTextBrowser can render Markdown
         self.body_browser = QTextBrowser()
         self.body_browser.setObjectName("ReleaseBody")
-        self.body_browser.setOpenExternalLinks(True)
+        # Do not let release notes open arbitrary schemes (file:, javascript:).
+        self.body_browser.setOpenExternalLinks(False)
+        self.body_browser.anchorClicked.connect(self._open_body_link)
 
-        body_text = self.info.get("body", "").strip()
+        body_text = self.info.get("body")
+        if not isinstance(body_text, str):
+            body_text = ""
+        body_text = body_text.strip()
         if not body_text:
             body_text = t("dialog.update.no_description")
 
         # setMarkdown — converts ## and ** into nice formatting
         try:
             self.body_browser.setMarkdown(body_text)
-        except AttributeError:
-            # Older versions of PySide6 may not include setMarkdown
+        except Exception:
+            # Older PySide6 versions or unusual Markdown must not crash the dialog
             self.body_browser.setPlainText(body_text)
 
         layout.addWidget(self.body_browser, stretch=1)
 
         # --- Publication Date ---
-        published = self.info.get("published_at", "")
-        if published:
-            date_label = QLabel(t("dialog.update.date", date=published[:10]))
+        published = self.info.get("published_at")
+        if isinstance(published, str) and published.strip():
+            date_label = QLabel(t("dialog.update.date", date=published.strip()[:10]))
             date_label.setObjectName("DateLabel")
             layout.addWidget(date_label)
 
@@ -125,6 +134,11 @@ class UpdateDialog(QDialog):
     # ------------------------------------------------------------------
     # Processors
     # ------------------------------------------------------------------
+    def _open_body_link(self, url) -> None:
+        """Opens links from release notes through the http(s)-only sanitizer."""
+        if not open_external_url(url.toString()):
+            print(f"[updater] Blocked link in release notes: {url.toString()}")
+
     def _open_release_page(self) -> None:
         """Opens the release page in the browser."""
         url = self.info.get("url", "")

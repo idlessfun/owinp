@@ -9,7 +9,7 @@ If there is no cache, it reads the built-in JSON files from app/apps/.
 import json
 from pathlib import Path
 
-from app.core.cache_manager import cache_exists_for_lang, load_cached_apps
+from app.core.cache_manager import _safe_component, load_cached_apps
 from app.core.user_settings import load_user_settings
 
 
@@ -59,17 +59,16 @@ def load_all_apps() -> list[dict]:
     # Get the current language
     try:
         settings = load_user_settings()
-        lang = settings.get("language", "en")
+        lang = _safe_component(settings.get("language", "en")) or "en"
     except Exception:
         lang = "en"
 
-    # Try the cache for the current language
-    if cache_exists_for_lang(lang):
-        cached = load_cached_apps(lang)
-        if cached:
-            cached = _dedupe(cached)
-            print(f"[app_loader] Loaded from the cache ({lang}): {len(cached)} items")
-            return cached
+    # load_cached_apps already falls back to the English cache when the
+    # current-language cache is missing or empty.
+    cached = _dedupe(load_cached_apps(lang))
+    if cached:
+        print(f"[app_loader] Loaded from the cache ({lang}): {len(cached)} items")
+        return cached
 
     # Cache is empty — use the built-in ones
     print("[app_loader] The cache is empty—we'll use the built-in directory")
@@ -94,7 +93,7 @@ def load_builtin_apps() -> list[dict]:
     # Get the current language
     try:
         settings = load_user_settings()
-        lang = settings.get("language", "en")
+        lang = _safe_component(settings.get("language", "en")) or "en"
     except Exception:
         lang = "en"
 

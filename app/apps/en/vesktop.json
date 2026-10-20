@@ -2,28 +2,31 @@
     "id": "vesktop",
     "name": "Vesktop",
     "description": "Lightweight Discord client with Vencord built-in.",
-    "version": "1.5.6",
+    "version": "1.6.7",
     "category": "Communication",
-    "size_mb": 90.0,
-    "website": "https://vesktop.vencord.dev/",
+    "size_mb": 191.0,
+    "website": "https://vesktop.dev/",
     "downloads": [
         {
             "label": "Download",
-            "url": "https://github.com/Vencord/Vesktop/releases/download/v1.5.6/Vesktop-Setup-1.5.6.exe",
+            "url": "https://github.com/Vencord/Vesktop/releases/download/v1.6.7/Vesktop-Setup-1.6.7.exe",
             "primary": true
         }
     ],
     "is_open_source": true,
     "is_portable": false,
-    "developer": "Vencord Team",
+    "developer": "Vendicated",
     "long_description": "Vesktop is a lightweight Discord client based on Vencord with additional features like screen sharing with audio support, improved performance, and a native title bar.",
-    "release_date": "2025-09-15",
+    "release_date": "2026-08-16",
     "license": "GPL-3.0",
     "icon": "vesktop.png",
     "requirements": [
         "Windows 10 or 11 (64-bit)",
         "Discord account",
-        "100 MB of free space"
+        "200 MB of free space"
+    ],
+    "screenshots": [
+        "vesktop_1.png"
     ],
     "features": [
         "Lightweight and fast",

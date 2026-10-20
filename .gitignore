@@ -27,6 +27,7 @@ htmlcov/
 .build_tmp/
 .build_cache/
 .smoke_appdata/
+OWINP-data/
 
 # OS
 .DS_Store

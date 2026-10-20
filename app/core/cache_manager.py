@@ -18,10 +18,18 @@ import shutil
 import time
 from pathlib import Path
 
+from app.core.runtime_paths import data_dir
+
+
+_WINDOWS_RESERVED_NAMES = (
+    {"CON", "PRN", "AUX", "NUL"}
+    | {f"COM{i}" for i in range(1, 10)}
+    | {f"LPT{i}" for i in range(1, 10)}
+)
+
 
 # --- Paths ---
-APPDATA = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
-CACHE_ROOT = APPDATA / "OWINP" / "cache"
+CACHE_ROOT = data_dir() / "cache"
 CACHE_APPS = CACHE_ROOT / "apps"                # Root folder for language subfolders
 CACHE_ICONS = CACHE_ROOT / "icons"              # Icons
 CACHE_SCREENSHOTS = CACHE_ROOT / "screenshots"  # Screenshots
@@ -45,10 +53,18 @@ def _safe_component(value: object) -> str:
 
     name = value.strip().replace("\\", "/").rsplit("/", 1)[-1].strip()
 
-    # Reject empty names, "." / "..", drive letters and control characters
-    if not name or name in (".", "..") or ":" in name:
+    # Reject empty names, "." / "..", drive letters, control characters,
+    # characters that Windows cannot store in a file name, trailing dots or
+    # spaces (Windows silently strips them) and reserved device names.
+    if not name or name in (".", ".."):
         return ""
     if any(ord(ch) < 32 for ch in name):
+        return ""
+    if any(ch in '<>:"/\\|?*' for ch in name):
+        return ""
+    if name.endswith((" ", ".")):
+        return ""
+    if name.split(".", 1)[0].upper() in _WINDOWS_RESERVED_NAMES:
         return ""
 
     return name
@@ -206,7 +222,7 @@ def get_cache_apps_dir(lang: str) -> Path:
     Returns the path to the cache folder for a specific language.
     Creates the folder if it does not exist.
 
-    Example: get_cache_apps_dir("ru") -> %APPDATA%/OWINP/cache/apps/ru
+    Example: get_cache_apps_dir("ru") -> <data folder>/cache/apps/ru
     """
     folder = CACHE_APPS / (_safe_component(lang) or "en")
     folder.mkdir(parents=True, exist_ok=True)

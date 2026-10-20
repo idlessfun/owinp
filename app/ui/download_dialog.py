@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.downloader import Downloader
-from app.core.cache_manager import find_icon
+from app.core.cache_manager import _safe_asset, find_icon
 from app.core.translator import t
 from app.ui.theme_helper import get_dialog_qss
 from app.ui import animations
@@ -42,6 +42,7 @@ class DownloadDialog(QDialog):
         self.save_path = save_path
         self.downloader: Downloader | None = None
         self._close_pending = False
+        self._allow_reject = False
         self._progress_anim = None
 
         self.setWindowTitle(
@@ -75,11 +76,9 @@ class DownloadDialog(QDialog):
 
         # If not in the cache, try the built-in one
         if icon_path is None:
-            icon_name = self.app_data.get("icon", "")
-            if icon_name:
-                candidate = ICONS_DIR / icon_name
-                if candidate.exists():
-                    icon_path = candidate
+            candidate = _safe_asset(ICONS_DIR, self.app_data.get("icon"))
+            if candidate is not None and candidate.is_file():
+                icon_path = candidate
 
         if icon_path is not None:
             pixmap = QPixmap(str(icon_path)).scaled(
@@ -185,7 +184,7 @@ class DownloadDialog(QDialog):
     def _start_download(self) -> None:
         # URL may come from the button (_clicked_url) or from the old field
         url = self.app_data.get("_clicked_url") or self.app_data.get("download_url", "")
-        if not url:
+        if not isinstance(url, str) or not url.strip():
             QMessageBox.warning(
                 self,
                 t("common.error"),
@@ -194,7 +193,11 @@ class DownloadDialog(QDialog):
             self.reject()
             return
 
-        self.downloader = Downloader(url, self.save_path)
+        checksum = self.app_data.get("_clicked_sha256") or self.app_data.get("sha256")
+        if not isinstance(checksum, str):
+            checksum = ""
+
+        self.downloader = Downloader(url, self.save_path, expected_sha256=checksum)
         self.downloader.progress_changed.connect(self._on_progress)
         self.downloader.finished_ok.connect(self._on_finished)
         self.downloader.cancelled.connect(self._on_cancelled)
@@ -260,7 +263,10 @@ class DownloadDialog(QDialog):
         # Change buttons
         self._swap_buttons_to_done(Path(path))
 
-        # Auto-run, if enabled in the settings
+        # Auto-run, if enabled in the settings and the dialog is not closing
+        if self._close_pending:
+            return
+
         try:
             from app.core.user_settings import load_user_settings
             settings = load_user_settings()
@@ -279,11 +285,13 @@ class DownloadDialog(QDialog):
             t("download.error_title"),
             t("download.error_text", error=error),
         )
+        self._allow_reject = True
         self.reject()
 
     def _on_cancel(self) -> None:
-        """The "Cancel" button."""
+        """The "Cancel" button, Esc and the window close button."""
         if self.downloader is None or not self.downloader.isRunning():
+            self._allow_reject = True
             self.reject()
             return
 
@@ -301,11 +309,13 @@ class DownloadDialog(QDialog):
     def _on_cancelled(self) -> None:
         """The thread reported that the cancellation is done."""
         print("[download] Cancelled by the user")
+        self._allow_reject = True
         self.reject()
 
     def _on_thread_finished(self) -> None:
         """The QThread is fully stopped — now it is safe to close the dialog."""
         if self._close_pending:
+            self._allow_reject = True
             self.reject()
 
     # ------------------------------------------------------------------
@@ -379,6 +389,21 @@ class DownloadDialog(QDialog):
     # ------------------------------------------------------------------
     # Close event (X button)
     # ------------------------------------------------------------------
+    def reject(self) -> None:
+        """
+        Esc and the window close button must cancel the download instead of
+        hiding a still-running worker behind a closed dialog.
+        """
+        if (
+            not self._allow_reject
+            and self.downloader is not None
+            and self.downloader.isRunning()
+        ):
+            print("[download] Esc pressed — cancelling the download")
+            self._on_cancel()
+            return
+        super().reject()
+
     def closeEvent(self, event) -> None:
         """
         Called when the window is closed (X button, Alt+F4).

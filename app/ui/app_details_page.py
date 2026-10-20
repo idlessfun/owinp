@@ -8,7 +8,7 @@ specs, requirements, features, and action buttons.
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QWidget,
@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 
-from app.core.cache_manager import find_icon, find_screenshot
+from app.core.cache_manager import _safe_asset, find_icon, find_screenshot
 from app.core.translator import t
 from app.ui.url_opener import open_external_url
 
@@ -48,6 +48,8 @@ class AppDetailsPage(QWidget):
         super().__init__()
 
         self._current_data: dict = {}
+        self._screenshot_labels: list[tuple[QLabel, QPixmap]] = []
+        self._screenshot_width = 0
 
         # Outer vertical layout
         outer = QVBoxLayout(self)
@@ -98,6 +100,8 @@ class AppDetailsPage(QWidget):
         self.scroll.verticalScrollBar().setValue(0)
 
         # Remove all widgets from the old content
+        self._screenshot_labels = []
+        self._screenshot_width = 0
         self._clear_layout(self.content_layout)
 
         # ---- Header: icon + name + developer + buttons ----
@@ -154,6 +158,9 @@ class AppDetailsPage(QWidget):
         # Stretch at the end
         self.content_layout.addStretch(1)
 
+        if self._screenshot_labels:
+            QTimer.singleShot(0, self._update_screenshot_sizes)
+
     def _clear_layout(self, layout) -> None:
         """Removes all widgets and sub-layouts from the layout."""
         while layout.count():
@@ -188,11 +195,9 @@ class AppDetailsPage(QWidget):
 
         # If not in cache — try the built-in one
         if icon_path is None:
-            icon_name = data.get("icon", "")
-            if icon_name:
-                candidate = ICONS_DIR / icon_name
-                if candidate.exists():
-                    icon_path = candidate
+            candidate = _safe_asset(ICONS_DIR, data.get("icon"))
+            if candidate is not None and candidate.is_file():
+                icon_path = candidate
 
         if icon_path is not None:
             pixmap = QPixmap(str(icon_path)).scaled(
@@ -244,6 +249,9 @@ class AppDetailsPage(QWidget):
             url = str(btn_info.get("url") or "")
             is_primary = bool(btn_info.get("primary", False))
             btn_type = btn_info.get("type", "download")
+            checksum = btn_info.get("sha256")
+            if not isinstance(checksum, str):
+                checksum = ""
 
             if not url:
                 continue
@@ -252,9 +260,11 @@ class AppDetailsPage(QWidget):
             btn.setObjectName("PrimaryButton" if is_primary else "SecondaryButton")
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.setFixedWidth(180)
-            # Pass data, URL, and button type to the signal
+            # Pass data, URL, button type and optional checksum to the signal
             btn.clicked.connect(
-                lambda _, u=url, d=data, bt=btn_type: self._on_download_clicked(u, d, bt)
+                lambda _, u=url, d=data, bt=btn_type, h=checksum: (
+                    self._on_download_clicked(u, d, bt, h)
+                )
             )
             actions.addWidget(btn)
 
@@ -387,8 +397,8 @@ class AppDetailsPage(QWidget):
             shot_path = find_screenshot(self._current_data, str(name))
             if shot_path is None:
                 # Fallback: built-in screenshot
-                builtin = SCREENSHOTS_DIR / Path(str(name)).name
-                if builtin.exists():
+                builtin = _safe_asset(SCREENSHOTS_DIR, name)
+                if builtin is not None and builtin.is_file():
                     shot_path = builtin
 
             if shot_path is None:
@@ -412,7 +422,7 @@ class AppDetailsPage(QWidget):
         return section
 
     def _add_screenshot_to_layout(self, shot_path: Path, layout) -> bool:
-        """Loads an image, scales to 600px wide, adds it to the layout."""
+        """Loads an image and adds a label that is resized with the window."""
         if not shot_path.exists():
             return False
 
@@ -421,16 +431,57 @@ class AppDetailsPage(QWidget):
             print(f"[details] Broken screenshot: {shot_path.name}")
             return False
 
+        width = self._screenshot_target_width()
         scaled = pixmap.scaledToWidth(
-            600,
+            width,
             Qt.TransformationMode.SmoothTransformation,
         )
 
         img_label = QLabel()
         img_label.setPixmap(scaled)
+        img_label.setFixedSize(scaled.size())
         img_label.setObjectName("Screenshot")
         layout.addWidget(img_label)
+        self._screenshot_labels.append((img_label, pixmap))
         return True
+
+    def _screenshot_target_width(self) -> int:
+        """Fits screenshots into the visible details area, up to 600 px."""
+        viewport_width = self.scroll.viewport().width()
+        if viewport_width <= 0:
+            return 600
+        # Content margins (40 + 40) and the section padding/border.
+        return max(240, min(600, viewport_width - 140))
+
+    def _update_screenshot_sizes(self) -> None:
+        """Re-scales screenshot labels after the window changed its width."""
+        if not self._screenshot_labels:
+            return
+        if self.scroll.viewport().width() <= 0:
+            return
+
+        width = self._screenshot_target_width()
+        if width == self._screenshot_width:
+            return
+
+        for img_label, source in list(self._screenshot_labels):
+            try:
+                scaled = source.scaledToWidth(
+                    width,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+                img_label.setPixmap(scaled)
+                img_label.setFixedSize(scaled.size())
+            except RuntimeError:
+                # The label was deleted while the resize timer was pending
+                continue
+
+        self._screenshot_width = width
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        if self._screenshot_labels:
+            QTimer.singleShot(0, self._update_screenshot_sizes)
 
     def _get_download_buttons(self, data: dict) -> list[dict]:
         """
@@ -455,6 +506,7 @@ class AppDetailsPage(QWidget):
                     "url": item.get("url", ""),
                     "primary": bool(item.get("primary", False)),
                     "type": item.get("type", "download"),
+                    "sha256": item.get("sha256", ""),
                 })
             if result:
                 return result
@@ -471,7 +523,7 @@ class AppDetailsPage(QWidget):
         return []
 
     def _on_download_clicked(
-        self, url: str, data: dict, btn_type: str = "download"
+        self, url: str, data: dict, btn_type: str = "download", sha256: str = ""
     ) -> None:
         """
         One of the buttons is clicked.
@@ -488,6 +540,7 @@ class AppDetailsPage(QWidget):
         # By default — download
         payload = dict(data)          # copy
         payload["_clicked_url"] = url  # add the URL that was clicked
+        payload["_clicked_sha256"] = sha256
         self.download_requested.emit(payload)
 
     # ------------------------------------------------------------------

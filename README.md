@@ -11,8 +11,8 @@
 
 **Ready-made version for Windows** — no need to install Python:
 
-- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.3.0/OWINP-Setup-0.3.0.exe)** — regular installation into the system (36.1 MB)
-- 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.3.0/OWINP-Portable-0.3.0.zip)** — unpack and run (34.8 MB)
+- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.3.1/OWINP-Setup-0.3.1.exe)** — regular installation into the system (36.0 MB)
+- 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.3.1/OWINP-Portable-0.3.1.zip)** — unpack and run (34.9 MB)
 
 Both versions are in the [**Releases**](https://github.com/idlessfun/owinp/releases/latest) section.
 
@@ -43,11 +43,16 @@ Both versions are in the [**Releases**](https://github.com/idlessfun/owinp/relea
 - Windows 10 or 11 (64-bit)
 - ~200 MB of free space
 
-**The installer is per-user and does not require administrator rights:**
-- installs to `%LOCALAPPDATA%\Programs\OWINP`
-- does not write to the Windows registry or system folders
-- uninstall via Start Menu → OWINP → Uninstall OWINP (or delete the folder)
-- uses its own writable folder `%LOCALAPPDATA%\OWINP\installer-temp` for unpacking, so a broken or locked `%TEMP%` cannot block the installation
+**The installer requires administrator rights (UAC):**
+- installs to `C:\Program Files\OWINP`
+- creates an entry in Apps & Features for uninstalling
+- the application itself runs without administrator rights and keeps its settings in `%APPDATA%\OWINP`
+- if Windows shows `is-*.tmp` and "Access denied", run the installer via right-click → "Run as administrator", or use the portable version
+
+**Portable version:**
+- keeps settings and cache in `OWINP-data` next to `OWINP.exe`
+- falls back to `%APPDATA%\OWINP` if the portable folder is read-only
+- to reset all settings and cached catalog data, close the app and delete `OWINP-data`
 
 ### Option 2 — From source
 
@@ -75,17 +80,16 @@ python main.py
 
 ## 🔒 Security
 
-⚠️ Note about Microsoft Defender
+✅ VirusTotal: no detections
 
-Microsoft Defender and SmartScreen may warn about unsigned installers — this is a common heuristic false positive for Inno Setup builds, not evidence of malware.
+Both the installer and the portable ZIP were checked on VirusTotal — no antivirus engine flags them.
 
-
-If Defender or SmartScreen blocks the installer:
+A SmartScreen warning is still possible because the installer is not code-signed. That is a reputation prompt, not an antivirus detection. If it appears:
 
     Click "More info" → "Run anyway"
-    Or use the portable version — it is not affected (checksums are in the release)
+    Or use the portable version (checksums are in the release)
 
-The installer is per-user: it does not request administrator rights, does not write to the registry, and touches only `%LOCALAPPDATA%\Programs\OWINP`, the Start Menu and the app's own `%APPDATA%\OWINP` folder.
+The installer requires administrator rights only to copy files into `Program Files` and to register the uninstaller. The application itself does not need administrator rights: installed builds read and write only their own `%APPDATA%\OWINP` folder, and the portable build uses `OWINP-data` next to the executable. The portable version requires no installation at all.
 
 Compare the SHA-256 checksum of the downloaded file with the one published in the release.
 
@@ -93,17 +97,18 @@ Compare the SHA-256 checksum of the downloaded file with the one published in th
 
 OWINP **does not collect** and **does not send** any data about you. No telemetry, analytics, tracking.
 
-The application makes **only two** types of network requests, and **both — only to the repository on GitHub**:
+The application makes three types of network requests:
 
-1. **Application update check** — once an hour requests the latest version via the GitHub Releases API.
-2. **Program catalog update** — once an hour downloads fresh JSON cards and images from `raw.githubusercontent.com`.
+1. **Application update check** — once an hour requests the latest version via the GitHub Releases API (`api.github.com`).
+2. **Program catalog update** — once an hour downloads fresh JSON cards from `api.github.com` and images from `raw.githubusercontent.com`.
+3. **File download** — only after you press a download button, the application fetches the file from the URL stored in that catalog card. Such URLs may point to external project sites; the application never contacts them on its own.
 
-Both checks:
+The first two types:
 - Use **only HTTPS**.
-- Work **only** with the domains `api.github.com` and `raw.githubusercontent.com`.
+- Work **only** with the domains `api.github.com` and `raw.githubusercontent.com`; redirects outside this list are blocked.
 - Are **silently** skipped if there is no internet — the application continues to work from the cache.
 
-The application makes **no** other requests.
+Catalog images are accepted only from `raw.githubusercontent.com`. Downloads are user-initiated, require HTTPS, and redirects that drop HTTPS are rejected. The application makes **no** other requests and sends no telemetry.
 
 ## 🗂 JSON program card format
 
@@ -147,6 +152,8 @@ Each program in the catalog is a JSON file in `app/apps/`. Example:
 **Required fields:** `id`, `name`, `description`, `version`, `category`, `size_mb`, `website`, `icon` and one of: `downloads` (new format) or `download_url` (old format).
 
 **Optional:** `developer`, `long_description`, `release_date`, `license`, `requirements`, `features`, `screenshots`, `is_portable`, `is_open_source`, `tags`.
+
+A download entry may include an optional `sha256` field with the lowercase 64-character SHA-256 hash of the file. When present, OWINP verifies the downloaded file and deletes it if the hash does not match.
 
 > ### How to add a program
 > **To great happiness, this process has become easier, and you can do it simply through the [OWINP support Telegram group](https://t.me/+l5zeMXjfbXI0YzJi)!**

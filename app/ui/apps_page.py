@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
 )
 
 from app.core.app_loader import load_all_apps
-from app.core.cache_manager import find_icon
+from app.core.cache_manager import _safe_asset, _safe_component, find_icon
 from app.core.translator import t
 from app.core.user_settings import load_user_settings
 from app.ui.app_details_page import AppDetailsPage
@@ -382,7 +382,9 @@ class AppsPage(QWidget):
 
         # Build a safe default name: strip query strings, keep only the basename
         parsed = urlsplit(str(url))
-        default_name = unquote(Path(parsed.path).name) or "download.exe"
+        default_name = (
+            _safe_component(unquote(Path(parsed.path).name)) or "download.exe"
+        )
 
         downloads_dir = QStandardPaths.writableLocation(
             QStandardPaths.StandardLocation.DownloadLocation
@@ -443,11 +445,9 @@ class AppCard(QFrame):
 
         # If not in the cache — try the built-in one
         if icon_path is None:
-            icon_name = data.get("icon", "")
-            if isinstance(icon_name, str) and icon_name:
-                candidate = ICONS_DIR / Path(icon_name).name
-                if candidate.exists():
-                    icon_path = candidate
+            candidate = _safe_asset(ICONS_DIR, data.get("icon"))
+            if candidate is not None and candidate.is_file():
+                icon_path = candidate
 
         if icon_path is not None:
             pixmap = QPixmap(str(icon_path)).scaled(

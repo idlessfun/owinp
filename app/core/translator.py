@@ -72,6 +72,19 @@ def _load_fallback() -> None:
     _fallback_loaded = True
 
 
+def _normalize_language_code(value: object) -> str:
+    """Keeps language codes to a single safe file-name component."""
+    if not isinstance(value, str):
+        return ""
+
+    code = value.strip().lower()
+    if not code or len(code) > 16:
+        return ""
+    if not all(ch.isalnum() or ch in "_-" for ch in code):
+        return ""
+    return code
+
+
 def set_language(lang_code: str) -> bool:
     """
     Sets the current language and loads its translations.
@@ -83,13 +96,20 @@ def set_language(lang_code: str) -> bool:
     _fallback_loaded = False
     _load_fallback()
 
-    if lang_code == FALLBACK_LANG:
+    code = _normalize_language_code(lang_code)
+    if not code:
+        print(f"[translator] Invalid language code: {lang_code!r}")
+        _translations = dict(_fallback)
+        _current_lang = FALLBACK_LANG
+        return False
+
+    if code == FALLBACK_LANG:
         _translations = dict(_fallback)
         _current_lang = FALLBACK_LANG
         print(f"[translator] Language set: {FALLBACK_LANG}")
         return True
 
-    path = LOCALES_DIR / f"{lang_code}.json"
+    path = LOCALES_DIR / f"{code}.json"
     if not path.exists():
         print(f"[translator] Language file not found: {path}")
         _translations = dict(_fallback)
@@ -104,8 +124,8 @@ def set_language(lang_code: str) -> bool:
         return False
 
     _translations = data
-    _current_lang = lang_code
-    print(f"[translator] Language set: {lang_code}")
+    _current_lang = code
+    print(f"[translator] Language set: {code}")
     return True
 
 

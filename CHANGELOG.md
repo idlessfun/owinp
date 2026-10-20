@@ -11,6 +11,30 @@ and versions follow [Semantic Versioning](https://semver.org/lang/ru/).
 - GitHub token in settings
 - Admin tool adaptation for per-language cards
 
+## [0.3.1] — 2026-10-20
+
+### Added
+- True portable mode: a `portable.flag` next to `OWINP.exe` keeps settings and cache in `OWINP-data`, with an `%APPDATA%\OWINP` fallback if that folder is read-only
+- Reproducible release build script for Nuitka, the portable ZIP and the Inno Setup installer
+
+### Security
+- Catalog JSON and images are fetched only from `api.github.com` / `raw.githubusercontent.com`; every redirect is re-checked against that allowlist
+- Application update requests are restricted to `api.github.com` and reject redirects outside that host
+- GitHub API and catalog responses are size-limited
+- Asset names are validated against Windows-specific unsafe names (drive-relative names, reserved device names, trailing dots/spaces) and must stay inside the cache
+- Downloads re-check HTTPS on every redirect, enforce a size limit, detect truncated transfers, and verify an optional SHA-256 checksum from the catalog
+- Links in release notes are opened only through the http(s)-only sanitizer
+- The download dialog cancels on `Esc` instead of hiding a still-running download; auto-run is skipped while the dialog is closing
+
+### Fixed
+- Update dialog no longer crashes on `null` release fields returned by GitHub
+- Closing the main window cancels update/catalog workers immediately instead of waiting for their timeouts
+- Download progress uses 64-bit integers and no longer overflows on files larger than 2 GB
+- The English cache is used as a fallback even when the current-language cache folder is absent
+- Screenshots fit the program page at the minimum window size
+- Catalog data: 7-Zip 26.03 links and duplicate primary button, Vesktop EN/RU metadata, VLC Yandex mirror, ISO release date
+- Installer documentation now matches the per-machine installation into `Program Files`
+
 ## [0.3.0] — 2026-10-19
 
 ### Added
@@ -43,8 +67,7 @@ and versions follow [Semantic Versioning](https://semver.org/lang/ru/).
 - Update check no longer fails on Windows consoles with cp1251/cp866 code pages
 - First run now really detects the system language (the auto-detect branch was unreachable)
 - Language switch is applied immediately by rebuilding the UI, without a process restart
-- Installer uses a launcher with its own writable temp folder, so a broken `%TEMP%` no longer blocks installation
-- Installer is per-user and does not write to the registry
+- Installer requests administrator rights for the per-machine installation into `Program Files` and registers an uninstall entry
 - Settings and catalog JSON saved with a UTF-8 BOM are read correctly
 - External links are restricted to `http`/`https`
 

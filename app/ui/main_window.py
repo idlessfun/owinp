@@ -793,6 +793,9 @@ class MainWindow(QMainWindow):
 
     def _on_update_available(self, info: dict) -> None:
         """If there's an update, display a banner (if enabled in the settings)."""
+        if self._closing:
+            return
+
         self._update_info = info
         show_banner = self.user_settings.get("show_update_banner", True)
         if show_banner:
@@ -840,6 +843,8 @@ class MainWindow(QMainWindow):
 
     def _on_no_update(self) -> None:
         print("[main] No updates")
+        if self._closing:
+            return
         if self._manual_check:
             self._manual_check = False
             QMessageBox.information(
@@ -850,6 +855,8 @@ class MainWindow(QMainWindow):
 
     def _on_check_failed(self, error: str) -> None:
         print(f"[main] Failed to check for updates: {error}")
+        if self._closing:
+            return
         if self._manual_check:
             self._manual_check = False
             QMessageBox.warning(
@@ -892,6 +899,9 @@ class MainWindow(QMainWindow):
             print(f"[main] Catalog Updated: {count} files")
         else:
             print("[main] Catalog remains unchanged")
+
+        if self._closing:
+            return
 
         # The list was built at startup, before this update finished
         if hasattr(self, "apps_page"):
@@ -1496,25 +1506,35 @@ class MainWindow(QMainWindow):
         """
         Closes the window only after background workers have stopped.
 
-        Destroying a running QThread aborts the whole process, so the window
-        is hidden immediately and the application quits when the workers are
-        done (or after a safety timeout).
+        Running workers are cancelled immediately. Destroying a running
+        QThread aborts the whole process, so the window is hidden right away
+        and the application quits when the workers are done (or after a
+        safety timeout).
         """
         if not self._closing:
             self._save_window_geometry()
 
         if self._closing:
-            event.accept()
+            # Never destroy the window while a worker is still alive.
+            if self._running_workers():
+                event.ignore()
+            else:
+                event.accept()
             return
 
         self._closing = True
 
-        workers = [
-            worker
-            for worker in (self._checker, self._catalog_loader)
-            if worker is not None and self._worker_is_running(worker)
-        ]
+        for worker in (self._checker, self._catalog_loader):
+            if worker is None or not self._worker_is_running(worker):
+                continue
+            cancel = getattr(worker, "cancel", None)
+            if callable(cancel):
+                try:
+                    cancel()
+                except Exception as e:
+                    print(f"[main] Failed to cancel a background task: {e}")
 
+        workers = self._running_workers()
         if not workers:
             event.accept()
             return
@@ -1538,13 +1558,15 @@ class MainWindow(QMainWindow):
         except RuntimeError:
             return False
 
-    def _poll_shutdown(self) -> None:
-        workers = [
+    def _running_workers(self) -> list:
+        return [
             worker
             for worker in (self._checker, self._catalog_loader)
             if worker is not None and self._worker_is_running(worker)
         ]
-        if not workers:
+
+    def _poll_shutdown(self) -> None:
+        if not self._running_workers():
             self._finish_shutdown()
 
     def _force_shutdown(self) -> None:

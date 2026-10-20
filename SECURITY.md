@@ -6,8 +6,8 @@ We only support the **latest stable version** of OWINP. Older versions may not r
 
 | Version | Supported      |
 |--------|:--------------:|
-| 0.1.x  | ✅             |
-| < 0.1  | ❌             |
+| 0.3.x  | ✅             |
+| < 0.3  | ❌             |
 
 ## How to report a vulnerability
 
@@ -44,7 +44,8 @@ We are especially interested in reports about:
 
 - Vulnerabilities in the application code
 - Problems with downloading and verifying data
-- Problems with network requests
+- Problems with network requests, redirects, and host allowlists
+- Problems with path handling for cached JSON cards and images
 - Problems with processing JSON catalog files
 
 **Thank you** for helping protect OWINP and its users! 🙏
