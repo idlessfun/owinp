@@ -11,14 +11,16 @@
 
 **Ready-made version for Windows** — no need to install Python:
 
-- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.2.0/OWINP-Setup-0.2.0.exe)** — regular installation into the system (21.7 MB)
-- 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.2.0/OWINP-Portable-0.2.0.zip)** — unpack and run (29 MB)
+- 🖥 **[Installer](https://github.com/idlessfun/owinp/releases/download/v0.3.1/OWINP-Setup-0.3.1.exe)** — regular installation into the system (36.0 MB)
+- 📦 **[Portable](https://github.com/idlessfun/owinp/releases/download/v0.3.1/OWINP-Portable-0.3.1.zip)** — unpack and run (34.9 MB)
 
 Both versions are in the [**Releases**](https://github.com/idlessfun/owinp/releases/latest) section.
 
 ## ✨ Features
 
 - 🎨 **Modern interface** — dark theme, F-Droid style design
+- ✨ **Smooth animations** — animated startup splash, page transitions and card cascade, plus a low-end PC mode that turns every animation off
+- 🌐 **Instant language switch** — Russian/English is applied immediately, no restart needed
 - 📦 **Program catalog** — cards with description, characteristics, and screenshots
 - 🔍 **Search and filters** — instant search by name, description, and tags, filter by categories
 - ⬇️ **Built-in downloading** — progress bar, speed, cancellation
@@ -40,6 +42,17 @@ Both versions are in the [**Releases**](https://github.com/idlessfun/owinp/relea
 **System requirements:**
 - Windows 10 or 11 (64-bit)
 - ~200 MB of free space
+
+**The installer requires administrator rights (UAC):**
+- installs to `C:\Program Files\OWINP`
+- creates an entry in Apps & Features for uninstalling
+- the application itself runs without administrator rights and keeps its settings in `%APPDATA%\OWINP`
+- if Windows shows `is-*.tmp` and "Access denied", run the installer via right-click → "Run as administrator", or use the portable version
+
+**Portable version:**
+- keeps settings and cache in `OWINP-data` next to `OWINP.exe`
+- falls back to `%APPDATA%\OWINP` if the portable folder is read-only
+- to reset all settings and cached catalog data, close the app and delete `OWINP-data`
 
 ### Option 2 — From source
 
@@ -67,34 +80,35 @@ python main.py
 
 ## 🔒 Security
 
-⚠️ Note about Microsoft Defender
+✅ VirusTotal: no detections
 
-Microsoft Defender may flag the installer as Trojan:Win32/Wacatac.C!ml — this is a known false positive for Inno Setup installers.
+VirusTotal no longer flags either release file — no antivirus engine reports a detection for the installer or the portable ZIP.
 
-All other 66 antivirus engines (Kaspersky, DrWeb, ESET, BitDefender, Avast, and others) report the file as clean.
-
-If Defender blocks the installer:
+A SmartScreen warning is still possible because the installer is not code-signed. That is a reputation prompt, not an antivirus detection. If it appears:
 
     Click "More info" → "Run anyway"
-    Or use the portable version — it is not affected (VirusTotal: 0/70)
+    Or use the portable version (checksums are in the release)
 
-We have already submitted the file to Microsoft for review.
+The installer requires administrator rights only to copy files into `Program Files` and to register the uninstaller. The application itself does not need administrator rights: installed builds read and write only their own `%APPDATA%\OWINP` folder, and the portable build uses `OWINP-data` next to the executable. The portable version requires no installation at all.
+
+Compare the SHA-256 checksum of the downloaded file with the one published in the release.
 
 ### What the application does on the network
 
 OWINP **does not collect** and **does not send** any data about you. No telemetry, analytics, tracking.
 
-The application makes **only two** types of network requests, and **both — only to the repository on GitHub**:
+The application makes three types of network requests:
 
-1. **Application update check** — once an hour requests the latest version via the GitHub Releases API.
-2. **Program catalog update** — once an hour downloads fresh JSON cards and images from `raw.githubusercontent.com`.
+1. **Application update check** — once an hour requests the latest version via the GitHub Releases API (`api.github.com`).
+2. **Program catalog update** — once an hour downloads fresh JSON cards from `api.github.com` and images from `raw.githubusercontent.com`.
+3. **File download** — only after you press a download button, the application fetches the file from the URL stored in that catalog card. Such URLs may point to external project sites; the application never contacts them on its own.
 
-Both checks:
+The first two types:
 - Use **only HTTPS**.
-- Work **only** with the domains `api.github.com` and `raw.githubusercontent.com`.
+- Work **only** with the domains `api.github.com` and `raw.githubusercontent.com`; redirects outside this list are blocked.
 - Are **silently** skipped if there is no internet — the application continues to work from the cache.
 
-The application makes **no** other requests.
+Catalog images are accepted only from `raw.githubusercontent.com`. Downloads are user-initiated, require HTTPS, and redirects that drop HTTPS are rejected. The application makes **no** other requests and sends no telemetry.
 
 ## 🗂 JSON program card format
 
