@@ -1,0 +1,49 @@
+{
+  "id": "vscodium",
+  "name": "VSCodium",
+  "description": "Свободная сборка редактора кода без телеметрии и проприетарных компонентов.",
+  "version": "1.140.06880",
+  "category": "Разработка",
+  "size_mb": 155.1,
+  "website": "https://vscodium.com/",
+  "downloads": [
+    {
+      "label": "Скачать установщик для Windows (x64)",
+      "url": "https://github.com/VSCodium/vscodium/releases/download/1.140.06880/VSCodiumSetup-x64-1.140.06880.exe",
+      "primary": true
+    },
+    {
+      "label": "Портативная версия (ZIP)",
+      "url": "https://github.com/VSCodium/vscodium/releases/download/1.140.06880/VSCodium-win32-x64-1.140.06880.zip",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://vscodium.com/#install",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": true,
+  "developer": "VSCodium contributors",
+  "long_description": "VSCodium — открытая сборка Visual Studio Code без телеметрии, рекламы и проприетарных дополнений. Поддерживает расширения из Open VSX, Git, отладку и множество языков.",
+  "release_date": "2026-10-13",
+  "license": "MIT",
+  "requirements": [
+    "Windows 10 или 11 (64-bit)",
+    "4 ГБ оперативной памяти",
+    "1 ГБ свободного места"
+  ],
+  "features": [
+    "Редактор кода без телеметрии",
+    "Расширения VS Code",
+    "Встроенный Git и отладчик",
+    "Поддержка множества языков"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "редактор кода",
+    "разработка"
+  ]
+}
