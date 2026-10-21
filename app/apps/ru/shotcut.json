@@ -1,0 +1,45 @@
+{
+  "id": "shotcut",
+  "name": "Shotcut",
+  "description": "Свободный нелинейный видеоредактор с широкой поддержкой форматов и кодеков.",
+  "version": "26.9.27",
+  "category": "Медиа",
+  "size_mb": 145.8,
+  "website": "https://shotcut.org/",
+  "downloads": [
+    {
+      "label": "Скачать для Windows (64-bit)",
+      "url": "https://github.com/mltframework/shotcut/releases/download/v26.9.27/shotcut-win64-26.9.27.exe",
+      "primary": true
+    },
+    {
+      "label": "Портативная версия (ZIP)",
+      "url": "https://github.com/mltframework/shotcut/releases/download/v26.9.27/shotcut-win64-26.9.27.zip",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://shotcut.org/download/",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": true,
+  "developer": "Meltytech, LLC",
+  "long_description": "Shotcut — открытый видеоредактор без рекламы и телеметрии. Работает с большинством форматов благодаря MLT и FFmpeg, поддерживает фильтры, переходы и экспорт.",
+  "release_date": "2026-09-28",
+  "license": "GPL-3.0-or-later",
+  "requirements": "Windows 10/11 (64-bit)",
+  "features": [
+    "Нелинейный видеомонтаж",
+    "Поддержка множества форматов и кодеков",
+    "Панорама, фильтры и переходы",
+    "Экспорт в популярные форматы"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "видеоредактор",
+    "монтаж"
+  ]
+}
