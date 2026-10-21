@@ -23,7 +23,11 @@
   "developer": "The Document Foundation",
   "long_description": "LibreOffice — открытый офисный пакет без рекламы и телеметрии. Включает Writer, Calc, Impress, Draw, Base и Math, совместим с форматами Microsoft Office.",
   "license": "MPL-2.0",
-  "requirements": "Windows 10/11 (64-bit)",
+  "requirements": [
+    "Windows 10 или 11 (64-bit)",
+    "4 ГБ оперативной памяти",
+    "2 ГБ свободного места"
+  ],
   "features": [
     "Текстовые документы, таблицы и презентации",
     "Совместимость с форматами Microsoft Office",
