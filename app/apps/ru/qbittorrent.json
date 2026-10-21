@@ -1,0 +1,40 @@
+{
+  "id": "qbittorrent",
+  "name": "qBittorrent",
+  "description": "Свободный BitTorrent-клиент с понятным интерфейсом и расширенными настройками.",
+  "version": "5.3.0",
+  "category": "Сеть",
+  "size_mb": 47.7,
+  "website": "https://www.qbittorrent.org/",
+  "downloads": [
+    {
+      "label": "Скачать установщик для Windows (x64)",
+      "url": "https://github.com/qbittorrent/qBittorrent/releases/download/release-5.3.0/qbittorrent_5.3.0_x64_setup.exe",
+      "primary": true
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://www.qbittorrent.org/download",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": false,
+  "developer": "qBittorrent Project",
+  "long_description": "qBittorrent — открытый BitTorrent-клиент без рекламы и телеметрии. Предлагает встроенный поиск, планировщик, ограничение скорости и веб-интерфейс.",
+  "release_date": "2026-10-20",
+  "license": "GPL-2.0-or-later",
+  "requirements": "Windows 10/11 (64-bit)",
+  "features": [
+    "Загрузка через BitTorrent",
+    "Встроенный поиск торрентов",
+    "Планировщик и ограничение скорости",
+    "Веб-интерфейс"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "bittorrent",
+    "p2p"
+  ]
+}
