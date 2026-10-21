@@ -1,0 +1,49 @@
+{
+  "id": "keepassxc",
+  "name": "KeePassXC",
+  "description": "Открытый менеджер паролей с локальной зашифрованной базой и автозаполнением.",
+  "version": "2.7.12",
+  "category": "Безопасность",
+  "size_mb": 34.2,
+  "website": "https://keepassxc.org/",
+  "downloads": [
+    {
+      "label": "Скачать MSI-установщик для Windows (64-bit)",
+      "url": "https://github.com/keepassxreboot/keepassxc/releases/download/2.7.12/KeePassXC-2.7.12-Win64.msi",
+      "primary": true
+    },
+    {
+      "label": "Портативная версия (ZIP)",
+      "url": "https://github.com/keepassxreboot/keepassxc/releases/download/2.7.12/KeePassXC-2.7.12-Win64.zip",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://keepassxc.org/download/",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": true,
+  "developer": "KeePassXC Team",
+  "long_description": "KeePassXC — открытый менеджер паролей без рекламы и телеметрии. Хранит базу локально, использует AES-256, поддерживает автозаполнение, TOTP и браузерные расширения.",
+  "release_date": "2026-03-10",
+  "license": "GPL-2.0-or-later",
+  "requirements": [
+    "Windows 10 или 11 (64-bit)",
+    "2 ГБ оперативной памяти",
+    "200 МБ свободного места"
+  ],
+  "features": [
+    "Хранение паролей в локальной базе",
+    "Шифрование AES-256",
+    "Автозаполнение в браузере",
+    "Генератор паролей и TOTP"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "пароли",
+    "безопасность"
+  ]
+}
