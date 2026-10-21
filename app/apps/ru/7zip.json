@@ -1,11 +1,7 @@
 {
-  "id": "7zip",
-  "name": "7-Zip",
-  "description": "Свободный архиватор с высокой степенью сжатия и поддержкой популярных форматов.",
-  "version": "26.05",
   "category": "Утилиты",
-  "size_mb": 1.6,
-  "website": "https://www.7-zip.org/",
+  "description": "Свободный архиватор с высокой степенью сжатия и поддержкой популярных форматов.",
+  "developer": "Igor Pavlov",
   "downloads": [
     {
       "label": "Скачать для Windows (x64)",
@@ -18,27 +14,37 @@
       "primary": false
     }
   ],
-  "is_open_source": true,
-  "is_portable": false,
-  "developer": "Igor Pavlov",
-  "long_description": "7-Zip — открытый архиватор без рекламы и телеметрии. Поддерживает собственный формат 7z, ZIP, RAR, TAR и другие, а также шифрование AES-256.",
-  "release_date": "2026-10-21",
-  "license": "LGPL-2.1+",
-  "requirements": [
-    "Windows 7 или новее (64-bit)",
-    "256 МБ оперативной памяти",
-    "50 МБ свободного места"
-  ],
   "features": [
     "Поддержка 7z, ZIP, RAR, TAR, GZ и других форматов",
     "Высокая степень сжатия и шифрование AES-256",
     "Интеграция с контекстным меню Windows",
     "Работа с архивами из командной строки"
   ],
+  "id": "7zip",
+  "is_open_source": true,
+  "is_portable": false,
+  "license": "LGPL-2.1+",
+  "long_description": "7-Zip — открытый архиватор без рекламы и телеметрии. Поддерживает собственный формат 7z, ZIP, RAR, TAR и другие, а также шифрование AES-256.",
+  "name": "7-Zip",
+  "release_date": "2026-10-21",
+  "requirements": [
+    "Windows 7 или новее (64-bit)",
+    "256 МБ оперативной памяти",
+    "50 МБ свободного места"
+  ],
+  "size_mb": 1.6,
   "tags": [
     "open-source",
     "no-telemetry",
     "архиватор",
     "сжатие"
+  ],
+  "version": "26.05",
+  "website": "https://www.7-zip.org/",
+  "icon": "7ziplogo.png",
+  "screenshots": [
+    "7zip_1.png",
+    "7zip_2.jpg",
+    "7zip_3.jpg"
   ]
 }
