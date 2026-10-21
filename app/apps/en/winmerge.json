@@ -1,0 +1,49 @@
+{
+  "id": "winmerge",
+  "name": "WinMerge",
+  "description": "Открытый инструмент для сравнения файлов и папок с визуальным слиянием различий.",
+  "version": "2.16.58.2",
+  "category": "Разработка",
+  "size_mb": 16.4,
+  "website": "https://winmerge.org/",
+  "downloads": [
+    {
+      "label": "Скачать установщик для Windows (x64)",
+      "url": "https://github.com/WinMerge/winmerge/releases/download/v2.16.58.2/WinMerge-2.16.58.2-x64-Setup.exe",
+      "primary": true
+    },
+    {
+      "label": "Портативная версия (ZIP)",
+      "url": "https://github.com/WinMerge/winmerge/releases/download/v2.16.58.2/winmerge-2.16.58.2-x64-exe.zip",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://winmerge.org/downloads/",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": true,
+  "developer": "WinMerge Team",
+  "long_description": "WinMerge — открытая программа сравнения без рекламы и телеметрии. Показывает различия файлов и папок, помогает объединять изменения и поддерживает плагины.",
+  "release_date": "2026-08-27",
+  "license": "GPL-2.0-or-later",
+  "requirements": [
+    "Windows 7 или новее (64-bit)",
+    "1 ГБ оперативной памяти",
+    "100 МБ свободного места"
+  ],
+  "features": [
+    "Сравнение файлов и папок",
+    "Визуальное отображение различий",
+    "Слияние изменений",
+    "Поддержка плагинов"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "diff",
+    "разработка"
+  ]
+}
