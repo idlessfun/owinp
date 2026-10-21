@@ -1,0 +1,49 @@
+{
+  "id": "rustdesk",
+  "name": "RustDesk",
+  "description": "Открытая программа для удалённого доступа к рабочему столу с возможностью своего сервера.",
+  "version": "1.5.0",
+  "category": "Сеть",
+  "size_mb": 24.7,
+  "website": "https://rustdesk.com/",
+  "downloads": [
+    {
+      "label": "Скачать для Windows (x86_64)",
+      "url": "https://github.com/rustdesk/rustdesk/releases/download/1.5.0/rustdesk-1.5.0-x86_64.exe",
+      "primary": true
+    },
+    {
+      "label": "Скачать MSI-установщик (x86_64)",
+      "url": "https://github.com/rustdesk/rustdesk/releases/download/1.5.0/rustdesk-1.5.0-x86_64.msi",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://rustdesk.com/download",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": false,
+  "developer": "RustDesk Team",
+  "long_description": "RustDesk — открытая альтернатива проприетарным программам удалённого доступа. Не содержит рекламы и аналитики, поддерживает собственный сервер и передачу файлов.",
+  "release_date": "2026-09-30",
+  "license": "AGPL-3.0",
+  "requirements": [
+    "Windows 10 или 11 (64-bit)",
+    "2 ГБ оперативной памяти",
+    "200 МБ свободного места"
+  ],
+  "features": [
+    "Удалённый доступ к рабочему столу",
+    "Собственный сервер для связи",
+    "Передача файлов и буфер обмена",
+    "Кроссплатформенность"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "удалённый доступ",
+    "rdesktop"
+  ]
+}
