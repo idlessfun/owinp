@@ -29,7 +29,11 @@
   "long_description": "VSCodium — открытая сборка Visual Studio Code без телеметрии, рекламы и проприетарных дополнений. Поддерживает расширения из Open VSX, Git, отладку и множество языков.",
   "release_date": "2026-10-13",
   "license": "MIT",
-  "requirements": "Windows 10/11 (64-bit)",
+  "requirements": [
+    "Windows 10 или 11 (64-bit)",
+    "4 ГБ оперативной памяти",
+    "1 ГБ свободного места"
+  ],
   "features": [
     "Редактор кода без телеметрии",
     "Расширения VS Code",
