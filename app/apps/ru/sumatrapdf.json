@@ -1,0 +1,45 @@
+{
+  "id": "sumatrapdf",
+  "name": "SumatraPDF",
+  "description": "Лёгкий и быстрый просмотрщик PDF, EPUB, MOBI, CBZ и других документов.",
+  "version": "3.6.1",
+  "category": "Офис",
+  "size_mb": 10.6,
+  "website": "https://www.sumatrapdfreader.org/",
+  "downloads": [
+    {
+      "label": "Скачать установщик для Windows (64-bit)",
+      "url": "https://www.sumatrapdfreader.org/dl/rel/3.6.1/SumatraPDF-3.6.1-64-install.exe",
+      "primary": true
+    },
+    {
+      "label": "Портативная версия (ZIP)",
+      "url": "https://www.sumatrapdfreader.org/dl/rel/3.6.1/SumatraPDF-3.6.1-64.zip",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://www.sumatrapdfreader.org/download-free-pdf-viewer",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": true,
+  "developer": "Krzysztof Kowalczyk",
+  "long_description": "SumatraPDF — открытый просмотрщик документов без рекламы и телеметрии. Отличается малым размером, быстрым запуском и поддержкой портативного режима.",
+  "release_date": "2026-04-06",
+  "license": "GPL-3.0-or-later",
+  "requirements": "Windows 7/8/10/11 (64-bit)",
+  "features": [
+    "Быстрый просмотр PDF, EPUB, MOBI и CBZ",
+    "Низкое потребление ресурсов",
+    "Поиск и выделение текста",
+    "Портативная версия"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "pdf",
+    "просмотрщик"
+  ]
+}
