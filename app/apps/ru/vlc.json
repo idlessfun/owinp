@@ -1,40 +1,44 @@
 {
-    "id": "vlc",
-    "name": "VLC Media Player",
-    "developer": "VideoLAN",
-    "description": "Свободный медиаплеер, воспроизводит почти всё.",
-    "long_description": "VLC — мощный медиаплеер с открытым исходным кодом. Поддерживает множество форматов без дополнительных кодеков, работает с DVD, аудио-CD и сетевыми потоками.",
-    "version": "3.0.21",
-    "release_date": "2024-06-12",
-    "category": "Медиа",
-    "size_mb": 40.0,
-    "license": "GPL",
-    "website": "https://www.videolan.org/vlc/",
-    "downloads": [
+  "id": "vlc",
+  "name": "VLC media player",
+  "description": "Универсальный медиаплеер с поддержкой множества форматов, потоков и субтитров.",
+  "version": "3.0.24",
+  "category": "Медиа",
+  "size_mb": 44.1,
+  "website": "https://www.videolan.org/vlc/",
+  "downloads": [
     {
-        "label": "Скачать",
-        "url": "https://get.videolan.org/vlc/3.0.21/win64/vlc-3.0.21-win64.exe",
-        "primary": true
+      "label": "Скачать для Windows (64-bit)",
+      "url": "https://get.videolan.org/vlc/3.0.24/win64/vlc-3.0.24-win64.exe",
+      "primary": true
     },
     {
-        "label": "Зеркало (Яндекс)",
-        "url": "https://get.videolan.org/vlc/3.0.21/win64/vlc-3.0.21-win64.exe",
-        "primary": false
+      "label": "Портативная версия (ZIP)",
+      "url": "https://get.videolan.org/vlc/3.0.24/win64/vlc-3.0.24-win64.zip",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://www.videolan.org/vlc/download-windows.html",
+      "primary": false
     }
-],
-    "icon": "vlc.png",
-    "requirements": [
-        "Windows 7 и выше",
-        "64-битная система"
-    ],
-    "features": [
-        "Поддержка всех популярных форматов",
-        "Воспроизведение без дополнительных кодеков",
-        "Открытый исходный код",
-        "Без рекламы и телеметрии"
-    ],
-    "screenshots": [],
-    "is_portable": false,
-    "is_open_source": true,
-    "tags": ["медиа", "видео", "аудио", "плеер"]
+  ],
+  "is_open_source": true,
+  "is_portable": true,
+  "developer": "VideoLAN",
+  "long_description": "VLC media player — открытый медиаплеер без рекламы и телеметрии. Воспроизводит почти любые аудио- и видеофайлы, сетевые потоки, диски и субтитры.",
+  "license": "GPL-2.0-or-later",
+  "requirements": "Windows 7/8/10/11 (64-bit)",
+  "features": [
+    "Воспроизведение большинства аудио- и видеоформатов",
+    "Поддержка сетевых потоков, субтитров и плейлистов",
+    "Аппаратное ускорение и эквалайзер",
+    "Портативная версия для USB"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "медиаплеер",
+    "видео"
+  ]
 }
