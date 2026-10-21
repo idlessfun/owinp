@@ -1,0 +1,45 @@
+{
+  "id": "notepad-plus-plus",
+  "name": "Notepad++",
+  "description": "Лёгкий редактор текста и кода с подсветкой синтаксиса и поддержкой плагинов.",
+  "version": "8.9.8.1",
+  "category": "Разработка",
+  "size_mb": 6.6,
+  "website": "https://notepad-plus-plus.org/",
+  "downloads": [
+    {
+      "label": "Скачать установщик для Windows (x64)",
+      "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.9.8.1/npp.8.9.8.1.Installer.x64.exe",
+      "primary": true
+    },
+    {
+      "label": "Портативная версия (ZIP)",
+      "url": "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.9.8.1/npp.8.9.8.1.portable.x64.zip",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://notepad-plus-plus.org/downloads/",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": true,
+  "developer": "Don Ho",
+  "long_description": "Notepad++ — открытый редактор без рекламы и телеметрии. Поддерживает подсветку синтаксиса для десятков языков, поиск по файлам, макросы и плагины.",
+  "release_date": "2026-09-24",
+  "license": "GPL-3.0-or-later",
+  "requirements": "Windows 7/8/10/11 (64-bit)",
+  "features": [
+    "Редактор текста и кода с подсветкой",
+    "Поддержка множества языков",
+    "Поиск и замена в файлах",
+    "Плагины и макросы"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "редактор",
+    "код"
+  ]
+}
