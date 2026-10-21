@@ -28,7 +28,11 @@
   "developer": "Blender Foundation",
   "long_description": "Blender — открытый 3D-пакет без рекламы и телеметрии. Объединяет моделирование, скульптинг, анимацию, симуляцию, рендеринг и compositing.",
   "license": "GPL-3.0-or-later",
-  "requirements": "Windows 10/11 (64-bit)",
+  "requirements": [
+    "Windows 10 или 11 (64-bit)",
+    "8 ГБ оперативной памяти",
+    "2 ГБ свободного места"
+  ],
   "features": [
     "3D-моделирование и скульптинг",
     "Анимация, риггинг и симуляция",
