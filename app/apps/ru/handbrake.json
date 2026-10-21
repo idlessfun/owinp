@@ -1,0 +1,45 @@
+{
+  "id": "handbrake",
+  "name": "HandBrake",
+  "description": "Открытый конвертер видео для сжатия и подготовки файлов под разные устройства.",
+  "version": "1.11.2",
+  "category": "Медиа",
+  "size_mb": 24.2,
+  "website": "https://handbrake.fr/",
+  "downloads": [
+    {
+      "label": "Скачать для Windows (x86_64)",
+      "url": "https://github.com/HandBrake/HandBrake/releases/download/1.11.2/HandBrake-1.11.2-x86_64-Win_GUI.exe",
+      "primary": true
+    },
+    {
+      "label": "Портативная версия (ZIP)",
+      "url": "https://github.com/HandBrake/HandBrake/releases/download/1.11.2/HandBrake-1.11.2-x86_64-Win_GUI.zip",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://handbrake.fr/downloads.php",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": true,
+  "developer": "HandBrake Team",
+  "long_description": "HandBrake — открытый видеоконвертер без рекламы и телеметрии. Позволяет сжимать видео, менять контейнер и кодеки, а также использовать готовые пресеты.",
+  "release_date": "2026-06-07",
+  "license": "GPL-2.0-or-later",
+  "requirements": "Windows 10/11 (64-bit)",
+  "features": [
+    "Конвертация видео в MP4 и MKV",
+    "Готовые пресеты для устройств",
+    "Пакетная обработка и очередь",
+    "Аппаратное кодирование"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "видео",
+    "конвертер"
+  ]
+}
