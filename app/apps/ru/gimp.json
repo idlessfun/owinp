@@ -1,11 +1,7 @@
 {
-  "id": "gimp",
-  "name": "GIMP",
-  "description": "Мощный растровый графический редактор для обработки фото и создания изображений.",
-  "version": "3.2.6",
   "category": "Графика",
-  "size_mb": 181.5,
-  "website": "https://www.gimp.org/",
+  "description": "Мощный растровый графический редактор для обработки фото и создания изображений.",
+  "developer": "GIMP Development Team",
   "downloads": [
     {
       "label": "Скачать установщик для Windows (64-bit)",
@@ -18,27 +14,35 @@
       "primary": false
     }
   ],
-  "is_open_source": true,
-  "is_portable": false,
-  "developer": "GIMP Development Team",
-  "long_description": "GIMP — открытый графический редактор без рекламы и телеметрии. Поддерживает слои, маски, кисти, плагины и работу с популярными форматами изображений.",
-  "release_date": "2026-09-10",
-  "license": "GPL-3.0-or-later",
-  "requirements": [
-    "Windows 10 или 11 (64-bit)",
-    "4 ГБ оперативной памяти",
-    "1 ГБ свободного места"
-  ],
   "features": [
     "Работа с растровой графикой и фотографиями",
     "Слои, маски и инструменты выделения",
     "Поддержка плагинов и кистей",
     "Открытие PSD, PNG, JPEG, TIFF и других форматов"
   ],
+  "id": "gimp",
+  "is_open_source": true,
+  "is_portable": false,
+  "license": "GPL-3.0-or-later",
+  "long_description": "GIMP — открытый графический редактор без рекламы и телеметрии. Поддерживает слои, маски, кисти, плагины и работу с популярными форматами изображений.",
+  "name": "GIMP",
+  "release_date": "2026-09-10",
+  "requirements": [
+    "Windows 10 или 11 (64-bit)",
+    "4 ГБ оперативной памяти",
+    "1 ГБ свободного места"
+  ],
+  "size_mb": 181.5,
   "tags": [
     "open-source",
     "no-telemetry",
     "графика",
     "фоторедактор"
+  ],
+  "version": "3.2.6",
+  "website": "https://www.gimp.org/",
+  "icon": "ima5ges.png",
+  "screenshots": [
+    "gimp_1.jpg"
   ]
 }
