@@ -1,0 +1,40 @@
+{
+  "id": "gimp",
+  "name": "GIMP",
+  "description": "Мощный растровый графический редактор для обработки фото и создания изображений.",
+  "version": "3.2.6",
+  "category": "Графика",
+  "size_mb": 181.5,
+  "website": "https://www.gimp.org/",
+  "downloads": [
+    {
+      "label": "Скачать установщик для Windows (64-bit)",
+      "url": "https://download.gimp.org/gimp/v3.2/windows/gimp-3.2.6-setup.exe",
+      "primary": true
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://www.gimp.org/downloads/",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": false,
+  "developer": "GIMP Development Team",
+  "long_description": "GIMP — открытый графический редактор без рекламы и телеметрии. Поддерживает слои, маски, кисти, плагины и работу с популярными форматами изображений.",
+  "release_date": "2026-09-10",
+  "license": "GPL-3.0-or-later",
+  "requirements": "Windows 10/11 (64-bit)",
+  "features": [
+    "Работа с растровой графикой и фотографиями",
+    "Слои, маски и инструменты выделения",
+    "Поддержка плагинов и кистей",
+    "Открытие PSD, PNG, JPEG, TIFF и других форматов"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "графика",
+    "фоторедактор"
+  ]
+}
