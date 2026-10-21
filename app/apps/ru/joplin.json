@@ -1,0 +1,45 @@
+{
+  "id": "joplin",
+  "name": "Joplin",
+  "description": "Открытое приложение для заметок и списков задач с синхронизацией и шифрованием.",
+  "version": "3.7.21",
+  "category": "Офис",
+  "size_mb": 344.3,
+  "website": "https://joplinapp.org/",
+  "downloads": [
+    {
+      "label": "Скачать установщик для Windows",
+      "url": "https://github.com/laurent22/joplin/releases/download/v3.7.21/Joplin-Setup-3.7.21.exe",
+      "primary": true
+    },
+    {
+      "label": "Портативная версия",
+      "url": "https://github.com/laurent22/joplin/releases/download/v3.7.21/JoplinPortable.exe",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://joplinapp.org/download/",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": true,
+  "developer": "Laurent Cozic",
+  "long_description": "Joplin — открытое приложение для заметок без рекламы и телеметрии. Поддерживает Markdown, вложения, теги, поиск, шифрование и синхронизацию с разными сервисами.",
+  "release_date": "2026-09-25",
+  "license": "AGPL-3.0",
+  "requirements": "Windows 10/11 (64-bit)",
+  "features": [
+    "Заметки и списки задач в Markdown",
+    "Синхронизация и шифрование",
+    "Поиск и теги",
+    "Импорт из Evernote"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "заметки",
+    "продуктивность"
+  ]
+}
