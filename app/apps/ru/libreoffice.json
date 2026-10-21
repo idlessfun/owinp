@@ -1,0 +1,39 @@
+{
+  "id": "libreoffice",
+  "name": "LibreOffice",
+  "description": "Свободный офисный пакет для работы с документами, таблицами и презентациями.",
+  "version": "26.8.1",
+  "category": "Офис",
+  "size_mb": 357.5,
+  "website": "https://www.libreoffice.org/",
+  "downloads": [
+    {
+      "label": "Скачать для Windows (x86-64)",
+      "url": "https://download.documentfoundation.org/libreoffice/stable/26.8.1/win/x86_64/LibreOffice_26.8.1_Win_x86-64.msi",
+      "primary": true
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://www.libreoffice.org/download/download-libreoffice/",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": false,
+  "developer": "The Document Foundation",
+  "long_description": "LibreOffice — открытый офисный пакет без рекламы и телеметрии. Включает Writer, Calc, Impress, Draw, Base и Math, совместим с форматами Microsoft Office.",
+  "license": "MPL-2.0",
+  "requirements": "Windows 10/11 (64-bit)",
+  "features": [
+    "Текстовые документы, таблицы и презентации",
+    "Совместимость с форматами Microsoft Office",
+    "Экспорт в PDF и EPUB",
+    "Расширения и макросы"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "офис",
+    "документы"
+  ]
+}
