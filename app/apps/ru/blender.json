@@ -1,11 +1,7 @@
 {
-  "id": "blender",
-  "name": "Blender",
-  "description": "Профессиональный пакет для 3D-моделирования, анимации, рендеринга и видеомонтажа.",
-  "version": "5.2.2",
   "category": "Графика",
-  "size_mb": 348.0,
-  "website": "https://www.blender.org/",
+  "description": "Профессиональный пакет для 3D-моделирования, анимации, рендеринга и видеомонтажа.",
+  "developer": "Blender Foundation",
   "downloads": [
     {
       "label": "Скачать установщик для Windows (x64)",
@@ -23,26 +19,36 @@
       "primary": false
     }
   ],
-  "is_open_source": true,
-  "is_portable": true,
-  "developer": "Blender Foundation",
-  "long_description": "Blender — открытый 3D-пакет без рекламы и телеметрии. Объединяет моделирование, скульптинг, анимацию, симуляцию, рендеринг и compositing.",
-  "license": "GPL-3.0-or-later",
-  "requirements": [
-    "Windows 10 или 11 (64-bit)",
-    "8 ГБ оперативной памяти",
-    "2 ГБ свободного места"
-  ],
   "features": [
     "3D-моделирование и скульптинг",
     "Анимация, риггинг и симуляция",
     "Рендеринг Cycles и EEVEE",
     "Видеомонтаж и compositing"
   ],
+  "id": "blender",
+  "is_open_source": true,
+  "is_portable": true,
+  "license": "GPL-3.0-or-later",
+  "long_description": "Blender — открытый 3D-пакет без рекламы и телеметрии. Объединяет моделирование, скульптинг, анимацию, симуляцию, рендеринг и compositing.",
+  "name": "Blender",
+  "requirements": [
+    "Windows 10 или 11 (64-bit)",
+    "8 ГБ оперативной памяти",
+    "2 ГБ свободного места"
+  ],
+  "size_mb": 348.0,
   "tags": [
     "open-source",
     "no-telemetry",
     "3d",
     "анимация"
+  ],
+  "version": "5.2.2",
+  "website": "https://www.blender.org/",
+  "icon": "images.png",
+  "screenshots": [
+    "blender_1.jpg",
+    "blender_2.jpg",
+    "blender_3.jpg"
   ]
 }
