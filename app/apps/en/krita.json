@@ -1,0 +1,49 @@
+{
+  "id": "krita",
+  "name": "Krita",
+  "description": "Открытый редактор для цифровой живописи, иллюстрации и покадровой анимации.",
+  "version": "5.3.4.1",
+  "category": "Графика",
+  "size_mb": 157.8,
+  "website": "https://krita.org/",
+  "downloads": [
+    {
+      "label": "Скачать установщик для Windows (x64)",
+      "url": "https://download.kde.org/stable/krita/5.3.4.1/krita-x64-5.3.4.1-setup.exe",
+      "primary": true
+    },
+    {
+      "label": "Портативная версия (ZIP)",
+      "url": "https://download.kde.org/stable/krita/5.3.4.1/krita-x64-5.3.4.1.zip",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://krita.org/en/download/",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": true,
+  "developer": "Krita Foundation",
+  "long_description": "Krita — открытая программа для рисования без рекламы и телеметрии. Создана для художников: поддерживает кисти, стабилизаторы, слои и анимацию.",
+  "release_date": "2026-10-07",
+  "license": "GPL-3.0-or-later",
+  "requirements": [
+    "Windows 10 или 11 (64-bit)",
+    "8 ГБ оперативной памяти",
+    "1 ГБ свободного места"
+  ],
+  "features": [
+    "Рисование и цифровая живопись",
+    "Гибкие кисти и стабилизаторы",
+    "Анимация и покадровая работа",
+    "Поддержка графических планшетов"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "рисование",
+    "графика"
+  ]
+}
