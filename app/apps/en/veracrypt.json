@@ -1,0 +1,49 @@
+{
+  "id": "veracrypt",
+  "name": "VeraCrypt",
+  "description": "Открытая программа для шифрования дисков, разделов и виртуальных контейнеров.",
+  "version": "1.26.29",
+  "category": "Безопасность",
+  "size_mb": 38.9,
+  "website": "https://www.veracrypt.fr/",
+  "downloads": [
+    {
+      "label": "Скачать установщик для Windows",
+      "url": "https://github.com/veracrypt/VeraCrypt/releases/download/VeraCrypt_1.26.29/VeraCrypt.Setup.1.26.29.exe",
+      "primary": true
+    },
+    {
+      "label": "Скачать MSI-установщик (x64)",
+      "url": "https://github.com/veracrypt/VeraCrypt/releases/download/VeraCrypt_1.26.29/VeraCrypt_Setup_x64_1.26.29.msi",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://www.veracrypt.fr/en/Downloads.html",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": false,
+  "developer": "IDRIX",
+  "long_description": "VeraCrypt — открытое средство шифрования без рекламы и телеметрии. Создаёт зашифрованные контейнеры и шифрует разделы, поддерживает скрытые тома и разные алгоритмы.",
+  "release_date": "2026-06-12",
+  "license": "Apache-2.0",
+  "requirements": [
+    "Windows 10 или 11 (64-bit)",
+    "2 ГБ оперативной памяти",
+    "100 МБ свободного места"
+  ],
+  "features": [
+    "Шифрование дисков и контейнеров",
+    "Скрытые тома и правдоподобное отрицание",
+    "Поддержка AES, Serpent и Twofish",
+    "Кроссплатформенность"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "шифрование",
+    "безопасность"
+  ]
+}
