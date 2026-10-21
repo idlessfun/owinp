@@ -1,0 +1,44 @@
+{
+  "id": "blender",
+  "name": "Blender",
+  "description": "Профессиональный пакет для 3D-моделирования, анимации, рендеринга и видеомонтажа.",
+  "version": "5.2.2",
+  "category": "Графика",
+  "size_mb": 348.0,
+  "website": "https://www.blender.org/",
+  "downloads": [
+    {
+      "label": "Скачать установщик для Windows (x64)",
+      "url": "https://www.blender.org/download/release/Blender5.2/blender-5.2.2-windows-x64.msi",
+      "primary": true
+    },
+    {
+      "label": "Портативная версия (ZIP)",
+      "url": "https://www.blender.org/download/release/Blender5.2/blender-5.2.2-windows-x64.zip",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://www.blender.org/download/",
+      "primary": false
+    }
+  ],
+  "is_open_source": true,
+  "is_portable": true,
+  "developer": "Blender Foundation",
+  "long_description": "Blender — открытый 3D-пакет без рекламы и телеметрии. Объединяет моделирование, скульптинг, анимацию, симуляцию, рендеринг и compositing.",
+  "license": "GPL-3.0-or-later",
+  "requirements": "Windows 10/11 (64-bit)",
+  "features": [
+    "3D-моделирование и скульптинг",
+    "Анимация, риггинг и симуляция",
+    "Рендеринг Cycles и EEVEE",
+    "Видеомонтаж и compositing"
+  ],
+  "tags": [
+    "open-source",
+    "no-telemetry",
+    "3d",
+    "анимация"
+  ]
+}
