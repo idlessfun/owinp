@@ -1,46 +1,45 @@
 {
   "id": "obs-studio",
   "name": "OBS Studio",
-  "description": "Свободная программа для записи видео и стриминга",
-  "version": "32.1.2",
+  "description": "Программа для записи экрана и прямых трансляций с гибкой настройкой сцен.",
+  "version": "32.2.2",
   "category": "Медиа",
-  "size_mb": 120.0,
+  "size_mb": 152.4,
   "website": "https://obsproject.com/",
   "downloads": [
     {
-      "label": "Скачать для Windows",
-      "url": "https://github.com/obsproject/obs-studio/releases/download/32.1.2/OBS-Studio-32.1.2-Windows-x64-Installer.exe",
+      "label": "Скачать установщик для Windows (x64)",
+      "url": "https://github.com/obsproject/obs-studio/releases/download/32.2.2/OBS-Studio-32.2.2-Windows-x64-Installer.exe",
       "primary": true
+    },
+    {
+      "label": "Портативная версия (ZIP)",
+      "url": "https://github.com/obsproject/obs-studio/releases/download/32.2.2/OBS-Studio-32.2.2-Windows-x64.zip",
+      "primary": false
+    },
+    {
+      "label": "Официальная страница загрузки",
+      "url": "https://obsproject.com/download",
+      "primary": false
     }
   ],
   "is_open_source": true,
-  "is_portable": false,
+  "is_portable": true,
   "developer": "OBS Project",
-  "long_description": "OBS Studio — бесплатное программное обеспечение с открытым исходным кодом для записи видео и прямой трансляции. Поддерживает Windows, macOS и Linux.",
-  "release_date": "2026-05-01",
-  "license": "GPL-2.0",
-  "icon": "obs-studio.png",
-  "requirements": [
-    "Windows 10 или 11 (64-bit)",
-    "Intel Core i5 4-го поколения или AMD FX 6300",
-    "4 ГБ оперативной памяти",
-    "DirectX 10.1-совместимая видеокарта",
-    "600 МБ свободного места"
-  ],
+  "long_description": "OBS Studio — открытая программа для стриминга и записи экрана без рекламы и телеметрии. Поддерживает сцены, источники, микширование звука и плагины.",
+  "release_date": "2026-08-14",
+  "license": "GPL-2.0-or-later",
+  "requirements": "Windows 10/11 (64-bit)",
   "features": [
-    "Запись видео и стриминг",
-    "Поддержка сцен и переходов",
-    "Аудиомикшер",
-    "Плагины и расширения",
-    "Кроссплатформенность (Windows, macOS, Linux)"
+    "Запись экрана и стриминг",
+    "Сцены, источники и переключение в реальном времени",
+    "Микширование звука и фильтры",
+    "Плагины и настраиваемые профили"
   ],
   "tags": [
+    "open-source",
+    "no-telemetry",
     "стриминг",
-    "запись",
-    "видео",
-    "трансляция"
-  ],
-  "screenshots": [
-    "obs-studio_1.png"
+    "запись экрана"
   ]
 }
